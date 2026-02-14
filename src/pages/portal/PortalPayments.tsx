@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,8 @@ export default function PortalPayments() {
   const agreement = myAgreements[0];
   const [instalments, setInstalments] = useState<Instalment[]>(agreement?.instalments || []);
   const [editMode, setEditMode] = useState(false);
-  const [adjustedAmounts, setAdjustedAmounts] = useState<Record<string, number>>({});
+  // editAmounts holds the live amounts for ALL upcoming instalments during edit
+  const [editAmounts, setEditAmounts] = useState<Record<string, number>>({});
   const [showHistory, setShowHistory] = useState(false);
   const [smartApplied, setSmartApplied] = useState(false);
 
@@ -46,49 +47,63 @@ export default function PortalPayments() {
   const upcomingInstalments = instalments.filter(i => i.status === 'upcoming');
   const paidInstalments = instalments.filter(i => i.status === 'paid');
   const overdueInstalments = instalments.filter(i => i.status === 'overdue');
-  const totalRemaining = [...upcomingInstalments, ...overdueInstalments].reduce((s, i) => s + i.amount, 0);
+  const totalUpcoming = upcomingInstalments.reduce((s, i) => s + i.amount, 0);
   const totalPaid = paidInstalments.reduce((s, i) => s + i.amount, 0);
+  const totalRemaining = [...upcomingInstalments, ...overdueInstalments].reduce((s, i) => s + i.amount, 0);
   const progressPercent = (totalPaid / (totalPaid + totalRemaining)) * 100;
 
-  const getSliderBounds = (inst: Instalment) => ({
-    min: Math.round(inst.amount * 0.3),
-    max: Math.round(inst.amount * 2),
-  });
+  const minPerInst = 200; // minimum any instalment can be
 
-  const handleSliderChange = (instId: string, val: number[]) => {
-    setAdjustedAmounts(prev => ({ ...prev, [instId]: val[0] }));
+  // When entering edit mode, snapshot current amounts
+  const enterEditMode = () => {
+    const snapshot: Record<string, number> = {};
+    upcomingInstalments.forEach(i => { snapshot[i.id] = i.amount; });
+    setEditAmounts(snapshot);
+    setEditMode(true);
+  };
+
+  // Live proportional rebalance: when one slider moves, redistribute the difference across others
+  const handleSliderChange = (changedId: string, val: number[]) => {
+    const newVal = val[0];
+    const oldVal = editAmounts[changedId] ?? 0;
+    const diff = oldVal - newVal; // positive means freed up money
+
+    const otherIds = upcomingInstalments.filter(i => i.id !== changedId).map(i => i.id);
+    if (otherIds.length === 0) return;
+
+    // Distribute diff proportionally among others
+    const otherTotal = otherIds.reduce((s, id) => s + (editAmounts[id] ?? 0), 0);
+
+    const newAmounts = { ...editAmounts, [changedId]: newVal };
+
+    if (otherTotal > 0) {
+      otherIds.forEach(id => {
+        const proportion = (editAmounts[id] ?? 0) / otherTotal;
+        const adjusted = (editAmounts[id] ?? 0) + diff * proportion;
+        newAmounts[id] = Math.max(minPerInst, Math.round(adjusted * 100) / 100);
+      });
+    } else {
+      const perOther = diff / otherIds.length;
+      otherIds.forEach(id => {
+        newAmounts[id] = Math.max(minPerInst, Math.round(((editAmounts[id] ?? 0) + perOther) * 100) / 100);
+      });
+    }
+
+    setEditAmounts(newAmounts);
   };
 
   const handleApplyAll = () => {
-    const changes = Object.entries(adjustedAmounts);
-    if (changes.length === 0) {
-      setEditMode(false);
-      return;
-    }
-
-    // Calculate total diff and rebalance untouched upcoming
-    let totalDiff = 0;
-    changes.forEach(([id, newAmt]) => {
-      const orig = instalments.find(i => i.id === id);
-      if (orig) totalDiff += orig.amount - newAmt;
-    });
-
-    const untouchedUpcoming = upcomingInstalments.filter(i => !adjustedAmounts[i.id]);
-    const adjustPerInst = untouchedUpcoming.length > 0 ? totalDiff / untouchedUpcoming.length : 0;
-
     setInstalments(instalments.map(i => {
-      if (adjustedAmounts[i.id] !== undefined) return { ...i, amount: Math.round(adjustedAmounts[i.id] * 100) / 100 };
-      if (i.status === 'upcoming' && !adjustedAmounts[i.id]) return { ...i, amount: Math.round((i.amount + adjustPerInst) * 100) / 100 };
+      if (editAmounts[i.id] !== undefined) return { ...i, amount: editAmounts[i.id] };
       return i;
     }));
-
-    setAdjustedAmounts({});
+    setEditAmounts({});
     setEditMode(false);
-    toast({ title: 'Instalments adjusted', description: 'Remaining instalments rebalanced automatically.' });
+    toast({ title: 'Instalments adjusted', description: 'All payments rebalanced.' });
   };
 
   const handleCancelEdit = () => {
-    setAdjustedAmounts({});
+    setEditAmounts({});
     setEditMode(false);
   };
 
@@ -99,46 +114,42 @@ export default function PortalPayments() {
     );
     const totalScore = relevant.reduce((s, cf) => s + cf.score, 0);
 
-    setInstalments(instalments.map(inst => {
+    const newInstalments = instalments.map(inst => {
       if (inst.status !== 'upcoming') return inst;
       const cf = relevant.find(c => inst.dueDate.startsWith(c.month));
       if (!cf) return inst;
       const proportion = cf.score / totalScore;
       return { ...inst, amount: Math.round(total * proportion * 100) / 100 };
-    }));
+    });
 
+    setInstalments(newInstalments);
     setSmartApplied(true);
-    setAdjustedAmounts({});
+
+    // Also update edit amounts if in edit mode
+    if (editMode) {
+      const snapshot: Record<string, number> = {};
+      newInstalments.filter(i => i.status === 'upcoming').forEach(i => { snapshot[i.id] = i.amount; });
+      setEditAmounts(snapshot);
+    }
+
     toast({
       title: '✨ Smart Instalments Applied',
       description: 'Payments have been optimised based on your predicted cash flow.',
     });
   };
 
+  // Display amount: use editAmounts when in edit mode, otherwise instalment amount
+  const getDisplayAmount = (inst: Instalment) => {
+    if (editMode && editAmounts[inst.id] !== undefined) return editAmounts[inst.id];
+    return inst.amount;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Payments</h1>
-          <p className="text-sm text-muted-foreground mt-1">{agreement.insurerName} — {agreement.clientName}</p>
-        </div>
-        <div className="flex gap-2">
-          {editMode ? (
-            <>
-              <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-                <X className="h-4 w-4 mr-1" /> Cancel
-              </Button>
-              <Button size="sm" onClick={handleApplyAll} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                Apply & Rebalance
-              </Button>
-            </>
-          ) : (
-            <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
-              <Pencil className="h-3.5 w-3.5" /> Edit Amounts
-            </Button>
-          )}
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Payments</h1>
+        <p className="text-sm text-muted-foreground mt-1">{agreement.insurerName} — {agreement.clientName}</p>
       </div>
 
       {/* Summary strip */}
@@ -233,14 +244,35 @@ export default function PortalPayments() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Instalments with lateral margins and always-visible sliders */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Upcoming Schedule</h2>
-        <div className="max-w-3xl mx-auto space-y-2">
+      {/* Upcoming Instalments */}
+      <div className="max-w-3xl mx-auto">
+        {/* Edit controls right above the schedule */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Upcoming Schedule</h2>
+          <div className="flex gap-2">
+            {editMode ? (
+              <>
+                <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                  <X className="h-4 w-4 mr-1" /> Cancel
+                </Button>
+                <Button size="sm" onClick={handleApplyAll} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                  Apply Changes
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" variant="outline" onClick={enterEditMode} className="gap-1.5">
+                <Pencil className="h-3.5 w-3.5" /> Edit Amounts
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
           {[...overdueInstalments, ...upcomingInstalments].map((inst) => {
-            const bounds = getSliderBounds(inst);
-            const currentVal = adjustedAmounts[inst.id] ?? inst.amount;
             const isUpcoming = inst.status === 'upcoming';
+            const displayAmt = getDisplayAmount(inst);
+            // Slider range: allow between minPerInst and roughly 3x original
+            const sliderMax = Math.round(inst.amount * 3);
 
             return (
               <Card
@@ -261,25 +293,25 @@ export default function PortalPayments() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <p className={`text-lg font-bold ${adjustedAmounts[inst.id] !== undefined ? 'text-accent' : ''}`}>
-                        {formatCurrency(currentVal)}
+                      <p className={`text-lg font-bold ${editMode && editAmounts[inst.id] !== undefined && editAmounts[inst.id] !== inst.amount ? 'text-accent' : ''}`}>
+                        {formatCurrency(displayAmt)}
                       </p>
                       <Badge variant="outline" className={instStatusColors[inst.status]}>{inst.status}</Badge>
                     </div>
                   </div>
 
-                  {/* Always visible slider - greyed out when not editing */}
+                  {/* Always visible slider */}
                   {isUpcoming && (
                     <div className={`mt-3 pt-3 border-t border-border/30 transition-opacity ${editMode ? 'opacity-100' : 'opacity-40'}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] text-muted-foreground">{formatCurrency(bounds.min)}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatCurrency(bounds.max)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatCurrency(minPerInst)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatCurrency(sliderMax)}</span>
                       </div>
                       <Slider
-                        value={[currentVal]}
+                        value={[displayAmt]}
                         onValueChange={(val) => handleSliderChange(inst.id, val)}
-                        min={bounds.min}
-                        max={bounds.max}
+                        min={minPerInst}
+                        max={sliderMax}
                         step={50}
                         disabled={!editMode}
                       />
