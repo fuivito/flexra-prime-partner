@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,6 +7,7 @@ import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { useState } from 'react';
 import { AgreementStatus } from '@/types';
+import { Search } from 'lucide-react';
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
@@ -17,6 +17,7 @@ const statusColors: Record<AgreementStatus, string> = {
 };
 
 export default function BrokerAgreements() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -29,9 +30,12 @@ export default function BrokerAgreements() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Input placeholder="Search by client name..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+        <div className="relative max-w-xs flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search by client name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card" />
+        </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[140px] bg-card">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -44,35 +48,29 @@ export default function BrokerAgreements() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="glass-card">
         <CardHeader>
           <CardTitle>All Agreements ({filtered.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Insurer</TableHead>
-                <TableHead className="text-right">Premium</TableHead>
-                <TableHead>Term</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((a) => (
-                <TableRow key={a.id}>
-                  <TableCell>
-                    <Link to={`/broker/agreements/${a.id}`} className="font-medium hover:text-accent">{a.clientName}</Link>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{a.insurerName}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(a.premiumAmount)}</TableCell>
-                  <TableCell className="text-muted-foreground">{a.instalmentCount}mo</TableCell>
-                  <TableCell><Badge variant="outline" className={statusColors[a.status]}>{a.status}</Badge></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="space-y-1">
+            {filtered.map((a) => (
+              <div
+                key={a.id}
+                onClick={() => navigate(`/broker/agreements/${a.id}`)}
+                className="flex items-center justify-between rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{a.clientName}</p>
+                  <p className="text-sm text-muted-foreground">{a.insurerName} · {a.instalmentCount}mo</p>
+                </div>
+                <div className="flex items-center gap-4 ml-4">
+                  <span className="text-sm font-semibold">{formatCurrency(a.premiumAmount)}</span>
+                  <Badge variant="outline" className={statusColors[a.status]}>{a.status}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>

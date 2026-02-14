@@ -4,93 +4,99 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 200 24% 93%;
+    --foreground: 207 38% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 207 38% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 207 38% 16%;
 
-    --primary: 222 47% 11%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 207 38% 16%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 18% 95%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 200 24% 93%;
+    --secondary-foreground: 207 38% 16%;
 
-    --muted: 210 18% 95%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 200 18% 89%;
+    --muted-foreground: 215 12% 35%;
 
-    --accent: 217 91% 60%;
+    --accent: 174 76% 39%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 217 91% 60%;
+    --border: 200 18% 86%;
+    --input: 200 18% 86%;
+    --ring: 174 76% 39%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 207 38% 16%;
+    --sidebar-foreground: 200 24% 93%;
+    --sidebar-primary: 174 76% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 40% 18%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 222 40% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 210 34% 20%;
+    --sidebar-accent-foreground: 200 24% 93%;
+    --sidebar-border: 210 34% 20%;
+    --sidebar-ring: 174 76% 39%;
 
     --success: 152 69% 41%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+
+    --glass: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.3;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 207 38% 10%;
+    --foreground: 200 24% 93%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 207 38% 14%;
+    --card-foreground: 200 24% 93%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 207 38% 14%;
+    --popover-foreground: 200 24% 93%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 200 24% 93%;
+    --primary-foreground: 207 38% 16%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 34% 20%;
+    --secondary-foreground: 200 24% 93%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 210 34% 20%;
+    --muted-foreground: 215 16% 55%;
 
-    --accent: 217 91% 60%;
+    --accent: 174 76% 39%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 200 24% 93%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --border: 210 34% 20%;
+    --input: 210 34% 20%;
+    --ring: 174 76% 39%;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 207 38% 10%;
+    --sidebar-foreground: 200 24% 93%;
+    --sidebar-primary: 174 76% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 40% 12%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 222 40% 12%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 207 38% 14%;
+    --sidebar-accent-foreground: 200 24% 93%;
+    --sidebar-border: 207 38% 14%;
+    --sidebar-ring: 174 76% 39%;
 
     --success: 152 69% 41%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+
+    --glass: 207 38% 16% / 0.6;
+    --glass-border: 0 0% 100% / 0.1;
   }
 }
 
@@ -102,5 +108,14 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: hsl(var(--glass));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--glass-border));
   }
 }

@@ -1,23 +1,16 @@
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AgreementStatus, InstalmentStatus } from '@/types';
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
   pending: 'bg-warning/10 text-warning border-warning/20',
   completed: 'bg-muted text-muted-foreground border-border',
-  overdue: 'bg-destructive/10 text-destructive border-destructive/20',
-};
-
-const instStatusColors: Record<InstalmentStatus, string> = {
-  paid: 'bg-success/10 text-success border-success/20',
-  upcoming: 'bg-accent/10 text-accent border-accent/20',
   overdue: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
@@ -30,6 +23,7 @@ export default function AgreementDetail() {
   const downPayment = agreement.premiumAmount * (agreement.downPaymentPercent / 100);
   const financed = agreement.premiumAmount - downPayment;
   const paid = agreement.instalments.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+  const overdueInstalments = agreement.instalments.filter(i => i.status === 'overdue');
 
   return (
     <div className="space-y-6">
@@ -42,7 +36,7 @@ export default function AgreementDetail() {
         <Badge variant="outline" className={statusColors[agreement.status]}>{agreement.status}</Badge>
       </div>
 
-      <Card>
+      <Card className="glass-card">
         <CardHeader><CardTitle>Agreement Details</CardTitle></CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -50,7 +44,7 @@ export default function AgreementDetail() {
             <div><p className="text-xs text-muted-foreground">Premium</p><p className="font-medium">{formatCurrency(agreement.premiumAmount)}</p></div>
             <div><p className="text-xs text-muted-foreground">Down Payment</p><p className="font-medium">{agreement.downPaymentPercent}% ({formatCurrency(downPayment)})</p></div>
             <div><p className="text-xs text-muted-foreground">Financed Amount</p><p className="font-medium">{formatCurrency(financed)}</p></div>
-            <div><p className="text-xs text-muted-foreground">Paid So Far</p><p className="font-medium">{formatCurrency(paid)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Paid So Far</p><p className="font-medium text-success">{formatCurrency(paid)}</p></div>
             <div><p className="text-xs text-muted-foreground">Remaining</p><p className="font-medium">{formatCurrency(financed - paid)}</p></div>
             <div><p className="text-xs text-muted-foreground">Policy Period</p><p className="font-medium">{agreement.policyPeriodStart} → {agreement.policyPeriodEnd}</p></div>
             <div><p className="text-xs text-muted-foreground">Term</p><p className="font-medium">{agreement.instalmentCount} months</p></div>
@@ -58,35 +52,53 @@ export default function AgreementDetail() {
         </CardContent>
       </Card>
 
-      {agreement.instalments.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle>Instalment Schedule</CardTitle></CardHeader>
+      {/* Only highlight missed instalments — brokers don't need the full schedule */}
+      {overdueInstalments.length > 0 && (
+        <Card className="glass-card border-destructive/30 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" /> Missed Instalments ({overdueInstalments.length})
+            </CardTitle>
+          </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {agreement.instalments.map(inst => (
-                  <TableRow key={inst.id}>
-                    <TableCell>{inst.number}</TableCell>
-                    <TableCell>{inst.dueDate}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(inst.amount)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={instStatusColors[inst.status]}>{inst.status}</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-3">
+              {overdueInstalments.map(inst => (
+                <div key={inst.id} className="flex items-center justify-between rounded-lg bg-destructive/5 p-3">
+                  <div>
+                    <p className="text-sm font-medium">Instalment #{inst.number}</p>
+                    <p className="text-xs text-muted-foreground">Due: {inst.dueDate}</p>
+                  </div>
+                  <span className="font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Payment Summary for broker */}
+      <Card className="glass-card">
+        <CardHeader><CardTitle>Payment Summary</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-success/5 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Paid</p>
+              <p className="text-xl font-bold text-success">{agreement.instalments.filter(i => i.status === 'paid').length}</p>
+              <p className="text-xs text-muted-foreground">of {agreement.instalments.length} instalments</p>
+            </div>
+            <div className="rounded-xl bg-accent/5 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Upcoming</p>
+              <p className="text-xl font-bold text-accent">{agreement.instalments.filter(i => i.status === 'upcoming').length}</p>
+              <p className="text-xs text-muted-foreground">remaining</p>
+            </div>
+            <div className="rounded-xl bg-destructive/5 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Overdue</p>
+              <p className="text-xl font-bold text-destructive">{overdueInstalments.length}</p>
+              <p className="text-xs text-muted-foreground">missed</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
