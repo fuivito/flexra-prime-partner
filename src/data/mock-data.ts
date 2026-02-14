@@ -71,9 +71,9 @@ export const mockAgreements: Agreement[] = [
     status: 'active',
     createdAt: '2025-12-20',
     instalments: [
-      { id: 'i-1-1', agreementId: 'agr-1', number: 1, amount: 8000, dueDate: '2026-02-01', status: 'paid', paidDate: '2026-01-30' },
-      { id: 'i-1-2', agreementId: 'agr-1', number: 2, amount: 8000, dueDate: '2026-03-01', status: 'upcoming' },
-      { id: 'i-1-3', agreementId: 'agr-1', number: 3, amount: 8000, dueDate: '2026-04-01', status: 'upcoming' },
+      { id: 'i-1-1', agreementId: 'agr-1', number: 1, amount: 8000, dueDate: '2026-01-01', status: 'paid', paidDate: '2026-01-02' },
+      { id: 'i-1-2', agreementId: 'agr-1', number: 2, amount: 8000, dueDate: '2026-02-01', status: 'overdue' },
+      { id: 'i-1-3', agreementId: 'agr-1', number: 3, amount: 8000, dueDate: '2026-03-01', status: 'upcoming' },
       { id: 'i-1-4', agreementId: 'agr-1', number: 4, amount: 8000, dueDate: '2026-05-01', status: 'upcoming' },
       { id: 'i-1-5', agreementId: 'agr-1', number: 5, amount: 8000, dueDate: '2026-06-01', status: 'upcoming' },
       { id: 'i-1-6', agreementId: 'agr-1', number: 6, amount: 8000, dueDate: '2026-07-01', status: 'upcoming' },

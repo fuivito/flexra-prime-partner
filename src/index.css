@@ -48,8 +48,8 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --glass: 0 0% 100% / 0.7;
-    --glass-border: 0 0% 100% / 0.3;
+    --glass: 0 0% 100% / 0.55;
+    --glass-border: 0 0% 100% / 0.25;
   }
 
   .dark {
@@ -95,8 +95,8 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --glass: 207 38% 16% / 0.6;
-    --glass-border: 0 0% 100% / 0.1;
+    --glass: 207 38% 16% / 0.45;
+    --glass-border: 0 0% 100% / 0.08;
   }
 }
 
@@ -108,14 +108,28 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, hsl(174 76% 39% / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsl(207 38% 16% / 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 80%, hsl(174 76% 39% / 0.03) 0%, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
 @layer components {
   .glass-card {
     background: hsl(var(--glass));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid hsl(var(--glass-border));
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.06);
+  }
+}
+
+@layer utilities {
+  .glass-bg {
+    background: hsl(var(--glass));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 }
