@@ -17,8 +17,8 @@ import { Button } from '@/components/ui/button';
 
 const navItems = [
   { title: 'Dashboard', url: '/broker/dashboard', icon: LayoutDashboard },
+  { title: 'Deal Builder', url: '/broker/deals/new', icon: PlusCircle },
   { title: 'Clients', url: '/broker/clients', icon: Users },
-  { title: 'New Deal', url: '/broker/deals/new', icon: PlusCircle },
   { title: 'Agreements', url: '/broker/agreements', icon: FileText },
 ];
 
@@ -70,11 +70,17 @@ export default function BrokerLayout() {
         </Sidebar>
 
         <div className="flex flex-1 flex-col">
-          <header className="flex h-16 items-center border-b border-border px-6">
+          <header className="flex h-16 items-center border-b border-border/50 px-6 bg-card/50 backdrop-blur-sm">
             <SidebarTrigger className="mr-4" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {navItems.find(n => location.pathname.startsWith(n.url))?.title || 'Broker Portal'}
-            </h2>
+            <div className="flex-1">
+              <span className="text-sm text-muted-foreground">{user?.company || 'Flexra Insurance Services'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">{user?.name}</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                {user?.name?.charAt(0)}
+              </div>
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto p-6">
             <Outlet />
