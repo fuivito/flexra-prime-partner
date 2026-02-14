@@ -41,6 +41,7 @@ export default function PortalPayments() {
   const [editAmounts, setEditAmounts] = useState<Record<string, number>>({});
   const [showHistory, setShowHistory] = useState(false);
   const [smartApplied, setSmartApplied] = useState(false);
+  const _ = smartApplied; // keep state for future use
 
   if (!agreement) return <div className="text-muted-foreground">No active agreements.</div>;
 
@@ -126,7 +127,6 @@ export default function PortalPayments() {
     });
 
     setInstalments(newInstalments);
-    setSmartApplied(true);
 
     // Also update edit amounts if in edit mode
     if (editMode) {
@@ -217,7 +217,7 @@ export default function PortalPayments() {
               <h3 className="font-semibold text-sm">Smart Instalments</h3>
               <p className="text-xs text-muted-foreground mt-1">
                 AI analyses your company's predicted cash flow and redistributes payments to align with your strongest months.
-                {smartApplied && <span className="text-success ml-1">✓ Applied</span>}
+                {smartApplied && <span className="text-success ml-1">✓ Last applied</span>}
               </p>
               <div className="flex items-end gap-1 mt-3 h-12">
                 {mockCashflowMonths.slice(0, 10).map(cf => (
@@ -239,9 +239,8 @@ export default function PortalPayments() {
               size="sm"
               onClick={handleSmartInstalments}
               className="bg-accent text-accent-foreground hover:bg-accent/90 flex-shrink-0"
-              disabled={smartApplied}
             >
-              {smartApplied ? 'Applied' : 'Optimise'}
+              Optimise
             </Button>
           </div>
         </CardContent>
