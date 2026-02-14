@@ -8,7 +8,7 @@ import { formatCurrency } from '@/lib/calculator';
 import { FileText, DollarSign, Calendar, TrendingUp, AlertTriangle, ArrowRight, Shield } from 'lucide-react';
 import { Instalment, InstalmentStatus } from '@/types';
 import PayNowDialog from '@/components/PayNowDialog';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 
@@ -60,15 +60,6 @@ export default function PortalDashboard() {
   ].filter(d => d.value > 0);
 
   // Per-agreement comparison bar chart
-  const agreementBars = activeAgreements.map(a => {
-    const paid = a.instalments.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
-    const outstanding = a.instalments.filter(i => i.status !== 'paid').reduce((s, i) => s + i.amount, 0);
-    return {
-      name: a.insurerName.length > 12 ? a.insurerName.substring(0, 12) + '…' : a.insurerName,
-      paid,
-      outstanding,
-    };
-  });
 
   return (
     <div className="space-y-6">
@@ -156,106 +147,43 @@ export default function PortalDashboard() {
         )}
       </div>
 
-      {/* Charts row: Agreement comparison + Donut */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card className="glass-card md:col-span-3">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Paid vs Outstanding by Policy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {agreementBars.length === 1 ? (
-              /* Single-policy: horizontal progress bars instead of a lonely bar chart */
-              <div className="space-y-4 py-4">
-                <p className="text-sm font-medium">{activeAgreements[0]?.insurerName}</p>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                      <span>Paid</span>
-                      <span>{formatCurrency(agreementBars[0].paid)}</span>
-                    </div>
-                    <div className="h-3 rounded-full bg-secondary overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${(agreementBars[0].paid / (agreementBars[0].paid + agreementBars[0].outstanding)) * 100}%`,
-                          background: 'hsl(152, 69%, 41%)',
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                      <span>Outstanding</span>
-                      <span>{formatCurrency(agreementBars[0].outstanding)}</span>
-                    </div>
-                    <div className="h-3 rounded-full bg-secondary overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${(agreementBars[0].outstanding / (agreementBars[0].paid + agreementBars[0].outstanding)) * 100}%`,
-                          background: 'hsl(174, 76%, 39%)',
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={agreementBars} barGap={4}>
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip
-                      contentStyle={{ background: 'hsl(207, 38%, 16%)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: 12 }}
-                      formatter={(value: number) => formatCurrency(value)}
-                    />
-                    <Bar dataKey="paid" stackId="a" fill="hsl(152, 69%, 41%)" radius={[0, 0, 0, 0]} name="Paid" maxBarSize={80} />
-                    <Bar dataKey="outstanding" stackId="a" fill="hsl(174, 76%, 39%)" radius={[4, 4, 0, 0]} name="Outstanding" maxBarSize={80} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card md:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Payment Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[180px] relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" stroke="none">
-                    {donutData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: 'hsl(207, 38%, 16%)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: 12 }}
-                    formatter={(value: number) => formatCurrency(value)}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-xl font-bold">{Math.round(progressPercent)}%</p>
-                  <p className="text-xs text-muted-foreground">paid</p>
-                </div>
+      {/* Payment Breakdown Donut */}
+      <Card className="glass-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Payment Breakdown</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[180px] relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={donutData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" stroke="none">
+                  {donutData.map((entry, idx) => (
+                    <Cell key={idx} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: 'hsl(207, 38%, 16%)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: 12 }}
+                  formatter={(value: number) => formatCurrency(value)}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-xl font-bold">{Math.round(progressPercent)}%</p>
+                <p className="text-xs text-muted-foreground">paid</p>
               </div>
             </div>
-            <div className="flex justify-center gap-4 mt-2">
-              {donutData.map(d => (
-                <div key={d.name} className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-full" style={{ background: d.color }} />
-                  <span className="text-xs text-muted-foreground">{d.name}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+          <div className="flex justify-center gap-4 mt-2">
+            {donutData.map(d => (
+              <div key={d.name} className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full" style={{ background: d.color }} />
+                <span className="text-xs text-muted-foreground">{d.name}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Progress bar */}
       <Card className="glass-card">
