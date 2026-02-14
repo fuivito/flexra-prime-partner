@@ -53,10 +53,9 @@ export default function PortalPayments() {
   const progressPercent = (totalPaid / (totalPaid + totalRemaining)) * 100;
 
   const minPerInst = 200;
-  // Fixed slider max: total pool minus minimum for all others — so one slider can take almost everything
-  const sliderMax = upcomingInstalments.length > 1
-    ? totalUpcoming - (upcomingInstalments.length - 1) * minPerInst
-    : totalUpcoming;
+  // Cap each instalment at 2× the equal share so sliders use the full track range
+  const equalShare = upcomingInstalments.length > 0 ? totalUpcoming / upcomingInstalments.length : 0;
+  const sliderMax = Math.round(equalShare * 2);
 
   // When entering edit mode, snapshot current amounts
   const enterEditMode = () => {
