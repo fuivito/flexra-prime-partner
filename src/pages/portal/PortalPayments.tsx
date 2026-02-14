@@ -52,7 +52,11 @@ export default function PortalPayments() {
   const totalRemaining = [...upcomingInstalments, ...overdueInstalments].reduce((s, i) => s + i.amount, 0);
   const progressPercent = (totalPaid / (totalPaid + totalRemaining)) * 100;
 
-  const minPerInst = 200; // minimum any instalment can be
+  const minPerInst = 200;
+  // Fixed slider max: total pool minus minimum for all others — so one slider can take almost everything
+  const sliderMax = upcomingInstalments.length > 1
+    ? totalUpcoming - (upcomingInstalments.length - 1) * minPerInst
+    : totalUpcoming;
 
   // When entering edit mode, snapshot current amounts
   const enterEditMode = () => {
@@ -271,8 +275,6 @@ export default function PortalPayments() {
           {[...overdueInstalments, ...upcomingInstalments].map((inst) => {
             const isUpcoming = inst.status === 'upcoming';
             const displayAmt = getDisplayAmount(inst);
-            // Slider range: allow between minPerInst and roughly 3x original
-            const sliderMax = Math.round(inst.amount * 3);
 
             return (
               <Card
