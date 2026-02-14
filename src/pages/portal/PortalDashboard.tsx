@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
@@ -33,10 +34,14 @@ export default function PortalDashboard() {
   const overdueCount = activeAgreements.reduce((sum, a) =>
     sum + a.instalments.filter(i => i.status === 'overdue').length, 0);
 
-  // Next 3 upcoming payments
+  // Next 3 payments: overdue first, then upcoming
   const upcomingPayments = activeAgreements
-    .flatMap(a => a.instalments.filter(i => i.status === 'upcoming').map(i => ({ ...i, insurerName: a.insurerName })))
-    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .flatMap(a => a.instalments.filter(i => i.status === 'upcoming' || i.status === 'overdue').map(i => ({ ...i, insurerName: a.insurerName })))
+    .sort((a, b) => {
+      if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+      if (b.status === 'overdue' && a.status !== 'overdue') return 1;
+      return a.dueDate.localeCompare(b.dueDate);
+    })
     .slice(0, 3);
 
   const allInstalments = activeAgreements.flatMap(a => a.instalments);
@@ -283,10 +288,20 @@ export default function PortalDashboard() {
                   </div>
                   <div className="mt-4 flex items-end justify-between">
                     <p className="text-2xl font-bold">{formatCurrency(p.amount)}</p>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Due</p>
-                      <p className="text-sm font-medium">{format(parseISO(p.dueDate), 'dd MMM yyyy')}</p>
-                    </div>
+                    {p.status === 'overdue' ? (
+                      <Button
+                        size="sm"
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={(e) => { e.preventDefault(); }}
+                      >
+                        Pay Now
+                      </Button>
+                    ) : (
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Due</p>
+                        <p className="text-sm font-medium">{format(parseISO(p.dueDate), 'dd MMM yyyy')}</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
