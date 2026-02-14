@@ -297,6 +297,15 @@ export default function PortalPayments() {
                         {formatCurrency(displayAmt)}
                       </p>
                       <Badge variant="outline" className={instStatusColors[inst.status]}>{inst.status}</Badge>
+                      {inst.status === 'overdue' && (
+                        <Button
+                          size="sm"
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => toast({ title: 'Payment initiated', description: `Processing ${formatCurrency(inst.amount)} for instalment #${inst.number}.` })}
+                        >
+                          Pay Now
+                        </Button>
+                      )}
                     </div>
                   </div>
 
