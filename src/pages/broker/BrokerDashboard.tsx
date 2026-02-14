@@ -66,7 +66,7 @@ export default function BrokerDashboard() {
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground">Welcome back. Here's your overview.</p>
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <Button
             variant="outline"
             className="gap-2 rounded-full px-6 h-11 border-border glass-card hover:bg-muted/60"
