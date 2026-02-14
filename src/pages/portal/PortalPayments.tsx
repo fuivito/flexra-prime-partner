@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -7,7 +7,7 @@ import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
 import { Instalment, InstalmentStatus } from '@/types';
-import { Check, Sparkles, Calendar, DollarSign, ArrowRight, ChevronDown, ChevronUp, CreditCard } from 'lucide-react';
+import { Check, Sparkles, Calendar, DollarSign, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 
@@ -17,7 +17,6 @@ const instStatusColors: Record<InstalmentStatus, string> = {
   overdue: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-// Mock cashflow data for AI feature
 const mockCashflowMonths = [
   { month: '2026-03', score: 0.9, label: 'Mar' },
   { month: '2026-04', score: 0.5, label: 'Apr' },
@@ -37,8 +36,8 @@ export default function PortalPayments() {
   const myAgreements = mockAgreements.filter(a => a.policyholderUserId === 'ph-1' && a.status === 'active');
   const agreement = myAgreements[0];
   const [instalments, setInstalments] = useState<Instalment[]>(agreement?.instalments || []);
-  const [selectedInstId, setSelectedInstId] = useState<string | null>(null);
-  const [sliderValue, setSliderValue] = useState<number>(0);
+  const [editMode, setEditMode] = useState(false);
+  const [adjustedAmounts, setAdjustedAmounts] = useState<Record<string, number>>({});
   const [showHistory, setShowHistory] = useState(false);
   const [smartApplied, setSmartApplied] = useState(false);
 
@@ -51,45 +50,49 @@ export default function PortalPayments() {
   const totalPaid = paidInstalments.reduce((s, i) => s + i.amount, 0);
   const progressPercent = (totalPaid / (totalPaid + totalRemaining)) * 100;
 
-  const selectedInst = instalments.find(i => i.id === selectedInstId);
-  const minAmount = selectedInst ? Math.round(selectedInst.amount * 0.3) : 0;
-  const maxAmount = selectedInst ? Math.round(selectedInst.amount * 2) : 0;
+  const getSliderBounds = (inst: Instalment) => ({
+    min: Math.round(inst.amount * 0.3),
+    max: Math.round(inst.amount * 2),
+  });
 
-  const handleSelectInstalment = (inst: Instalment) => {
-    if (inst.status !== 'upcoming') return;
-    setSelectedInstId(inst.id);
-    setSliderValue(inst.amount);
+  const handleSliderChange = (instId: string, val: number[]) => {
+    setAdjustedAmounts(prev => ({ ...prev, [instId]: val[0] }));
   };
 
-  const handleSliderChange = (val: number[]) => {
-    setSliderValue(val[0]);
-  };
-
-  const handleApplyAdjustment = () => {
-    if (!selectedInstId) return;
-    const newAmount = sliderValue;
-    const oldInst = instalments.find(i => i.id === selectedInstId)!;
-    const diff = oldInst.amount - newAmount;
-    const otherUpcoming = upcomingInstalments.filter(i => i.id !== selectedInstId);
-
-    if (otherUpcoming.length === 0) {
-      toast({ title: 'Cannot adjust', description: 'Need at least 2 upcoming instalments to rebalance.', variant: 'destructive' });
+  const handleApplyAll = () => {
+    const changes = Object.entries(adjustedAmounts);
+    if (changes.length === 0) {
+      setEditMode(false);
       return;
     }
 
-    const adjustPerInst = diff / otherUpcoming.length;
+    // Calculate total diff and rebalance untouched upcoming
+    let totalDiff = 0;
+    changes.forEach(([id, newAmt]) => {
+      const orig = instalments.find(i => i.id === id);
+      if (orig) totalDiff += orig.amount - newAmt;
+    });
+
+    const untouchedUpcoming = upcomingInstalments.filter(i => !adjustedAmounts[i.id]);
+    const adjustPerInst = untouchedUpcoming.length > 0 ? totalDiff / untouchedUpcoming.length : 0;
+
     setInstalments(instalments.map(i => {
-      if (i.id === selectedInstId) return { ...i, amount: Math.round(newAmount * 100) / 100 };
-      if (i.status === 'upcoming' && i.id !== selectedInstId) return { ...i, amount: Math.round((i.amount + adjustPerInst) * 100) / 100 };
+      if (adjustedAmounts[i.id] !== undefined) return { ...i, amount: Math.round(adjustedAmounts[i.id] * 100) / 100 };
+      if (i.status === 'upcoming' && !adjustedAmounts[i.id]) return { ...i, amount: Math.round((i.amount + adjustPerInst) * 100) / 100 };
       return i;
     }));
 
-    setSelectedInstId(null);
-    toast({ title: 'Instalment adjusted', description: 'Remaining instalments rebalanced automatically.' });
+    setAdjustedAmounts({});
+    setEditMode(false);
+    toast({ title: 'Instalments adjusted', description: 'Remaining instalments rebalanced automatically.' });
+  };
+
+  const handleCancelEdit = () => {
+    setAdjustedAmounts({});
+    setEditMode(false);
   };
 
   const handleSmartInstalments = () => {
-    // AI-powered: redistribute based on mock cashflow scores
     const total = upcomingInstalments.reduce((s, i) => s + i.amount, 0);
     const relevant = mockCashflowMonths.filter(cf =>
       upcomingInstalments.some(i => i.dueDate.startsWith(cf.month))
@@ -105,7 +108,7 @@ export default function PortalPayments() {
     }));
 
     setSmartApplied(true);
-    setSelectedInstId(null);
+    setAdjustedAmounts({});
     toast({
       title: '✨ Smart Instalments Applied',
       description: 'Payments have been optimised based on your predicted cash flow.',
@@ -119,6 +122,22 @@ export default function PortalPayments() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Payments</h1>
           <p className="text-sm text-muted-foreground mt-1">{agreement.insurerName} — {agreement.clientName}</p>
+        </div>
+        <div className="flex gap-2">
+          {editMode ? (
+            <>
+              <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 mr-1" /> Cancel
+              </Button>
+              <Button size="sm" onClick={handleApplyAll} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                Apply & Rebalance
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+              <Pencil className="h-3.5 w-3.5" /> Edit Amounts
+            </Button>
+          )}
         </div>
       </div>
 
@@ -173,7 +192,7 @@ export default function PortalPayments() {
       </Card>
 
       {/* AI Smart Instalments */}
-      <Card className="glass-card border-accent/20 overflow-hidden">
+      <Card className="glass-card border-accent/20 overflow-hidden relative">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent via-accent/50 to-transparent" />
         <CardContent className="p-5">
           <div className="flex items-start gap-4">
@@ -186,7 +205,6 @@ export default function PortalPayments() {
                 AI analyses your company's predicted cash flow and redistributes payments to align with your strongest months.
                 {smartApplied && <span className="text-success ml-1">✓ Applied</span>}
               </p>
-              {/* Cashflow preview */}
               <div className="flex items-end gap-1 mt-3 h-12">
                 {mockCashflowMonths.slice(0, 10).map(cf => (
                   <div key={cf.month} className="flex-1 flex flex-col items-center gap-1">
@@ -215,74 +233,67 @@ export default function PortalPayments() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Instalments - modern cards */}
+      {/* Upcoming Instalments with lateral margins and always-visible sliders */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Upcoming Schedule</h2>
-        <div className="space-y-2">
-          {[...overdueInstalments, ...upcomingInstalments].map((inst) => (
-            <Card
-              key={inst.id}
-              className={`glass-card transition-all cursor-pointer hover:shadow-md ${
-                selectedInstId === inst.id ? 'ring-2 ring-accent shadow-lg' : ''
-              } ${inst.status === 'overdue' ? 'border-destructive/30' : ''}`}
-              onClick={() => handleSelectInstalment(inst)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold ${
-                      inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-accent/10 text-accent'
-                    }`}>
-                      #{inst.number}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{format(parseISO(inst.dueDate), 'dd MMMM yyyy')}</p>
-                      <p className="text-xs text-muted-foreground">Instalment #{inst.number}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-lg font-bold">{formatCurrency(inst.amount)}</p>
-                    <Badge variant="outline" className={instStatusColors[inst.status]}>{inst.status}</Badge>
-                  </div>
-                </div>
+        <div className="max-w-3xl mx-auto space-y-2">
+          {[...overdueInstalments, ...upcomingInstalments].map((inst) => {
+            const bounds = getSliderBounds(inst);
+            const currentVal = adjustedAmounts[inst.id] ?? inst.amount;
+            const isUpcoming = inst.status === 'upcoming';
 
-                {/* Slider adjustment for selected */}
-                {selectedInstId === inst.id && inst.status === 'upcoming' && (
-                  <div className="mt-4 pt-4 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-muted-foreground">Adjust amount</span>
-                      <span className="text-sm font-bold text-accent">{formatCurrency(sliderValue)}</span>
+            return (
+              <Card
+                key={inst.id}
+                className={`glass-card transition-all ${inst.status === 'overdue' ? 'border-destructive/30' : ''}`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold ${
+                        inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-accent/10 text-accent'
+                      }`}>
+                        #{inst.number}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{format(parseISO(inst.dueDate), 'dd MMMM yyyy')}</p>
+                        <p className="text-xs text-muted-foreground">Instalment #{inst.number}</p>
+                      </div>
                     </div>
-                    <Slider
-                      value={[sliderValue]}
-                      onValueChange={handleSliderChange}
-                      min={minAmount}
-                      max={maxAmount}
-                      step={100}
-                      className="mb-4"
-                    />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                      <span>{formatCurrency(minAmount)}</span>
-                      <span>{formatCurrency(maxAmount)}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleApplyAdjustment} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                        Apply & Rebalance
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedInstId(null)}>
-                        Cancel
-                      </Button>
+                    <div className="flex items-center gap-3">
+                      <p className={`text-lg font-bold ${adjustedAmounts[inst.id] !== undefined ? 'text-accent' : ''}`}>
+                        {formatCurrency(currentVal)}
+                      </p>
+                      <Badge variant="outline" className={instStatusColors[inst.status]}>{inst.status}</Badge>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+
+                  {/* Always visible slider - greyed out when not editing */}
+                  {isUpcoming && (
+                    <div className={`mt-3 pt-3 border-t border-border/30 transition-opacity ${editMode ? 'opacity-100' : 'opacity-40'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] text-muted-foreground">{formatCurrency(bounds.min)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatCurrency(bounds.max)}</span>
+                      </div>
+                      <Slider
+                        value={[currentVal]}
+                        onValueChange={(val) => handleSliderChange(inst.id, val)}
+                        min={bounds.min}
+                        max={bounds.max}
+                        step={50}
+                        disabled={!editMode}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
-      {/* Payment History - collapsible */}
-      <div>
+      {/* Payment History */}
+      <div className="max-w-3xl mx-auto">
         <button
           className="flex items-center gap-2 text-lg font-semibold mb-4 hover:text-accent transition-colors"
           onClick={() => setShowHistory(!showHistory)}

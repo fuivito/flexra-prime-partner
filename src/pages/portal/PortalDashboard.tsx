@@ -3,11 +3,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { FileText, DollarSign, Calendar, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
+import { FileText, DollarSign, Calendar, TrendingUp, AlertTriangle, ArrowRight, Shield } from 'lucide-react';
 import { InstalmentStatus } from '@/types';
-import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { Link } from 'react-router-dom';
-import { format, parseISO, isAfter } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const instStatusColors: Record<InstalmentStatus, string> = {
   paid: 'bg-success/10 text-success border-success/20',
@@ -39,25 +39,7 @@ export default function PortalDashboard() {
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
     .slice(0, 3);
 
-  // Chart data - payment timeline
   const allInstalments = activeAgreements.flatMap(a => a.instalments);
-  const monthlyData = allInstalments.reduce((acc, inst) => {
-    const month = inst.dueDate.substring(0, 7);
-    const existing = acc.find(d => d.month === month);
-    if (existing) {
-      if (inst.status === 'paid') existing.paid += inst.amount;
-      else existing.remaining += inst.amount;
-    } else {
-      acc.push({
-        month,
-        label: format(parseISO(inst.dueDate), 'MMM yy'),
-        paid: inst.status === 'paid' ? inst.amount : 0,
-        remaining: inst.status !== 'paid' ? inst.amount : 0,
-      });
-    }
-    return acc;
-  }, [] as { month: string; label: string; paid: number; remaining: number }[])
-    .sort((a, b) => a.month.localeCompare(b.month));
 
   // Donut data
   const paidTotal = allInstalments.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
@@ -69,9 +51,19 @@ export default function PortalDashboard() {
     { name: 'Overdue', value: overdueTotal, color: 'hsl(0, 84%, 60%)' },
   ].filter(d => d.value > 0);
 
+  // Per-agreement comparison bar chart
+  const agreementBars = activeAgreements.map(a => {
+    const paid = a.instalments.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+    const outstanding = a.instalments.filter(i => i.status !== 'paid').reduce((s, i) => s + i.amount, 0);
+    return {
+      name: a.insurerName.length > 12 ? a.insurerName.substring(0, 12) + '…' : a.insurerName,
+      paid,
+      outstanding,
+    };
+  });
+
   return (
     <div className="space-y-6">
-      {/* Welcome + quick stats */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
         <p className="text-muted-foreground text-sm mt-1">Here's your financing overview</p>
@@ -156,42 +148,30 @@ export default function PortalDashboard() {
         )}
       </div>
 
-      {/* Charts row */}
+      {/* Charts row: Agreement comparison + Donut */}
       <div className="grid gap-4 md:grid-cols-5">
-        {/* Payment timeline */}
         <Card className="glass-card md:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Payment Timeline</CardTitle>
+            <CardTitle className="text-base">Paid vs Outstanding by Policy</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyData}>
-                  <defs>
-                    <linearGradient id="paidGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(152, 69%, 41%)" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="hsl(152, 69%, 41%)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="remainingGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(174, 76%, 39%)" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="hsl(174, 76%, 39%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" />
+                <BarChart data={agreementBars} barGap={4}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" />
                   <YAxis tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip
                     contentStyle={{ background: 'hsl(207, 38%, 16%)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: 12 }}
                     formatter={(value: number) => formatCurrency(value)}
                   />
-                  <Area type="monotone" dataKey="paid" stackId="1" stroke="hsl(152, 69%, 41%)" fill="url(#paidGradient)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="remaining" stackId="1" stroke="hsl(174, 76%, 39%)" fill="url(#remainingGradient)" strokeWidth={2} />
-                </AreaChart>
+                  <Bar dataKey="paid" stackId="a" fill="hsl(152, 69%, 41%)" radius={[0, 0, 0, 0]} name="Paid" />
+                  <Bar dataKey="outstanding" stackId="a" fill="hsl(174, 76%, 39%)" radius={[4, 4, 0, 0]} name="Outstanding" />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Donut */}
         <Card className="glass-card md:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Payment Breakdown</CardTitle>
@@ -242,7 +222,7 @@ export default function PortalDashboard() {
         </CardContent>
       </Card>
 
-      {/* Upcoming payments - modern card style */}
+      {/* Upcoming payments */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Next Payments</h2>
@@ -252,7 +232,7 @@ export default function PortalDashboard() {
         </div>
         {upcomingPayments.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-3">
-            {upcomingPayments.map((p, idx) => (
+            {upcomingPayments.map((p) => (
               <Card key={p.id} className="glass-card hover:shadow-lg transition-all group cursor-pointer">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
@@ -263,9 +243,7 @@ export default function PortalDashboard() {
                     <Badge variant="outline" className={instStatusColors[p.status]}>{p.status}</Badge>
                   </div>
                   <div className="mt-4 flex items-end justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{formatCurrency(p.amount)}</p>
-                    </div>
+                    <p className="text-2xl font-bold">{formatCurrency(p.amount)}</p>
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Due</p>
                       <p className="text-sm font-medium">{format(parseISO(p.dueDate), 'dd MMM yyyy')}</p>
