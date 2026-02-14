@@ -20,6 +20,7 @@ import PortalLayout from "./layouts/PortalLayout";
 import PortalDashboard from "./pages/portal/PortalDashboard";
 import PortalPayments from "./pages/portal/PortalPayments";
 import PortalProfile from "./pages/portal/PortalProfile";
+import PortalAgreementDetail from "./pages/portal/PortalAgreementDetail";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="dashboard" element={<PortalDashboard />} />
               <Route path="payments" element={<PortalPayments />} />
               <Route path="profile" element={<PortalProfile />} />
+              <Route path="agreements/:id" element={<PortalAgreementDetail />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
