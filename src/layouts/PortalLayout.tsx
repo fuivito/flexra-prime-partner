@@ -69,19 +69,19 @@ export default function PortalLayout() {
         </Sidebar>
 
         <div className="flex flex-1 flex-col">
-          <header className="flex h-16 items-center border-b border-border/50 px-6 bg-card/50 backdrop-blur-sm">
-            <SidebarTrigger className="mr-4" />
-            <div className="flex-1">
-              <span className="text-sm text-muted-foreground">{user?.company || 'My Portal'}</span>
+          <header className="flex h-14 md:h-16 items-center border-b border-border/50 px-4 md:px-6 bg-card/50 backdrop-blur-sm">
+            <SidebarTrigger className="mr-3" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm text-muted-foreground truncate block">{user?.company || 'My Portal'}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">{user?.name}</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground hidden sm:block">{user?.name}</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground flex-shrink-0">
                 {user?.name?.charAt(0)}
               </div>
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">
             <Outlet />
           </main>
         </div>

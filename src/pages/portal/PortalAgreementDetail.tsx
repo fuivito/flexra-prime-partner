@@ -40,32 +40,32 @@ export default function PortalAgreementDetail() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link to="/portal/profile">
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{agreement.insurerName}</h1>
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">{agreement.insurerName}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">Agreement #{agreement.id}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 ml-12 sm:ml-0">
           <Badge variant="outline" className={statusColors[agreement.status] || ''}>{agreement.status}</Badge>
-          <Button onClick={handleDownload} className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
-            <FileDown className="h-4 w-4" /> Download Agreement
+          <Button onClick={handleDownload} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
+            <FileDown className="h-4 w-4" /> <span className="hidden sm:inline">Download</span> Agreement
           </Button>
         </div>
       </div>
 
       {/* Key financials */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         <Card className="glass-card">
           <CardContent className="p-5">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Premium</p>
-            <p className="text-2xl font-bold mt-1">{formatCurrency(agreement.premiumAmount)}</p>
+            <p className="text-xl md:text-2xl font-bold mt-1">{formatCurrency(agreement.premiumAmount)}</p>
           </CardContent>
         </Card>
         <Card className="glass-card">
@@ -78,13 +78,13 @@ export default function PortalAgreementDetail() {
         <Card className="glass-card">
           <CardContent className="p-5">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Financed Amount</p>
-            <p className="text-2xl font-bold mt-1">{formatCurrency(financedAmount)}</p>
+            <p className="text-xl md:text-2xl font-bold mt-1">{formatCurrency(financedAmount)}</p>
           </CardContent>
         </Card>
         <Card className="glass-card">
           <CardContent className="p-5">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Instalments</p>
-            <p className="text-2xl font-bold mt-1">{agreement.instalmentCount}</p>
+            <p className="text-xl md:text-2xl font-bold mt-1">{agreement.instalmentCount}</p>
             <p className="text-xs text-muted-foreground">monthly payments</p>
           </CardContent>
         </Card>

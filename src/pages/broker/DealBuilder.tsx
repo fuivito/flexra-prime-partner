@@ -85,7 +85,7 @@ export default function DealBuilder() {
 
       {/* Step Content */}
       <Card className="glass-card">
-        <CardContent className="p-8">
+        <CardContent className="p-4 sm:p-8">
           {step === 0 && (
             <div className="space-y-6">
               <div>
@@ -201,7 +201,7 @@ export default function DealBuilder() {
                   <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
                     <TrendingUp className="h-5 w-5 text-accent" /> Commissions Preview
                   </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <p className="text-xs text-muted-foreground">Base Commission</p>
                       <p className="text-lg font-bold">{formatCurrency(baseCommission)}</p>

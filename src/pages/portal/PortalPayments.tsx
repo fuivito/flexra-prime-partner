@@ -282,7 +282,7 @@ export default function PortalPayments() {
                 className={`glass-card transition-all ${inst.status === 'overdue' ? 'border-destructive/30' : ''}`}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
                       <div className={`h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold ${
                         inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-accent/10 text-accent'
@@ -294,8 +294,8 @@ export default function PortalPayments() {
                         <p className="text-xs text-muted-foreground">Instalment #{inst.number}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className={`text-lg font-bold ${editMode && editAmounts[inst.id] !== undefined && editAmounts[inst.id] !== inst.amount ? 'text-accent' : ''}`}>
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+                      <p className={`text-base sm:text-lg font-bold ${editMode && editAmounts[inst.id] !== undefined && editAmounts[inst.id] !== inst.amount ? 'text-accent' : ''}`}>
                         {formatCurrency(displayAmt)}
                       </p>
                       <Badge variant="outline" className={instStatusColors[inst.status]}>{inst.status}</Badge>

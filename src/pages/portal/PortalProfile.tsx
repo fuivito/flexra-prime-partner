@@ -154,26 +154,24 @@ export default function PortalProfile() {
         <CardContent className="space-y-2">
           {myAgreements.map(a => (
             <Link key={a.id} to={`/portal/agreements/${a.id}`}>
-              <div className="flex items-center justify-between p-4 rounded-xl bg-background/30 hover:bg-background/60 cursor-pointer transition-all group">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-background/30 hover:bg-background/60 cursor-pointer transition-all group gap-3">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
                     <Shield className="h-5 w-5 text-accent" />
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{a.insurerName}</p>
-                    <p className="text-xs text-muted-foreground">{a.policyPeriodStart} — {a.policyPeriodEnd}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{a.insurerName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{a.policyPeriodStart} — {a.policyPeriodEnd}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-bold">{formatCurrency(a.premiumAmount)}</p>
-                  </div>
+                <div className="flex items-center gap-3 ml-14 sm:ml-0">
+                  <p className="font-bold">{formatCurrency(a.premiumAmount)}</p>
                   <Badge variant="outline" className={
                     a.status === 'active' ? 'bg-success/10 text-success border-success/20' :
                     a.status === 'completed' ? 'bg-muted text-muted-foreground' :
                     'bg-accent/10 text-accent border-accent/20'
                   }>{a.status}</Badge>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
                 </div>
               </div>
             </Link>

@@ -78,14 +78,14 @@ export default function PortalDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         <Link to="/portal/payments">
           <Card className="glass-card hover:shadow-lg transition-all cursor-pointer group">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Active Agreements</p>
-                  <p className="text-3xl font-bold mt-1">{activeAgreements.length}</p>
+                  <p className="text-2xl md:text-3xl font-bold mt-1">{activeAgreements.length}</p>
                 </div>
                 <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                   <FileText className="h-5 w-5 text-accent" />
@@ -100,7 +100,7 @@ export default function PortalDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Financed</p>
-                <p className="text-3xl font-bold mt-1">{formatCurrency(totalFinanced)}</p>
+                <p className="text-2xl md:text-3xl font-bold mt-1">{formatCurrency(totalFinanced)}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-accent" />
@@ -114,7 +114,7 @@ export default function PortalDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Remaining</p>
-                <p className="text-3xl font-bold mt-1">{formatCurrency(remaining)}</p>
+                <p className="text-2xl md:text-3xl font-bold mt-1">{formatCurrency(remaining)}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-accent" />
@@ -130,7 +130,7 @@ export default function PortalDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-destructive uppercase tracking-wider">Overdue</p>
-                    <p className="text-3xl font-bold mt-1 text-destructive">{overdueCount}</p>
+                    <p className="text-2xl md:text-3xl font-bold mt-1 text-destructive">{overdueCount}</p>
                   </div>
                   <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center">
                     <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -278,7 +278,7 @@ export default function PortalDashboard() {
           </Link>
         </div>
         {upcomingPayments.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             {upcomingPayments.map((p) => (
               <Card key={p.id} className="glass-card hover:shadow-lg transition-all group cursor-pointer">
                 <CardContent className="p-5">
