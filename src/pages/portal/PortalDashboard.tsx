@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -5,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { FileText, DollarSign, Calendar, TrendingUp, AlertTriangle, ArrowRight, Shield } from 'lucide-react';
-import { InstalmentStatus } from '@/types';
+import { Instalment, InstalmentStatus } from '@/types';
+import PayNowDialog from '@/components/PayNowDialog';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
@@ -17,6 +19,7 @@ const instStatusColors: Record<InstalmentStatus, string> = {
 };
 
 export default function PortalDashboard() {
+  const [payDialogInst, setPayDialogInst] = useState<Instalment | null>(null);
   const myAgreements = mockAgreements.filter(a => a.policyholderUserId === 'ph-1');
   const activeAgreements = myAgreements.filter(a => a.status === 'active');
 
@@ -292,7 +295,7 @@ export default function PortalDashboard() {
                       <Button
                         size="sm"
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={(e) => { e.preventDefault(); }}
+                        onClick={(e) => { e.preventDefault(); setPayDialogInst(p); }}
                       >
                         Pay Now
                       </Button>
@@ -311,6 +314,16 @@ export default function PortalDashboard() {
           <Card className="glass-card"><CardContent className="p-8 text-center text-muted-foreground text-sm">No upcoming payments.</CardContent></Card>
         )}
       </div>
+
+      {payDialogInst && (
+        <PayNowDialog
+          open={!!payDialogInst}
+          onOpenChange={(open) => { if (!open) setPayDialogInst(null); }}
+          amount={payDialogInst.amount}
+          instalmentNumber={payDialogInst.number}
+          dueDate={format(parseISO(payDialogInst.dueDate), 'dd MMM yyyy')}
+        />
+      )}
     </div>
   );
 }

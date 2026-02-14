@@ -10,6 +10,7 @@ import { Instalment, InstalmentStatus } from '@/types';
 import { Check, Sparkles, Calendar, DollarSign, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
+import PayNowDialog from '@/components/PayNowDialog';
 
 const instStatusColors: Record<InstalmentStatus, string> = {
   paid: 'bg-success/10 text-success border-success/20',
@@ -40,6 +41,7 @@ export default function PortalPayments() {
   // editAmounts holds the live amounts for ALL upcoming instalments during edit
   const [editAmounts, setEditAmounts] = useState<Record<string, number>>({});
   const [showHistory, setShowHistory] = useState(false);
+  const [payDialogInst, setPayDialogInst] = useState<Instalment | null>(null);
   const [smartApplied, setSmartApplied] = useState(false);
   const _ = smartApplied; // keep state for future use
 
@@ -301,7 +303,7 @@ export default function PortalPayments() {
                         <Button
                           size="sm"
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          onClick={() => toast({ title: 'Payment initiated', description: `Processing ${formatCurrency(inst.amount)} for instalment #${inst.number}.` })}
+                          onClick={() => setPayDialogInst(inst)}
                         >
                           Pay Now
                         </Button>
@@ -369,6 +371,16 @@ export default function PortalPayments() {
           </div>
         )}
       </div>
+
+      {payDialogInst && (
+        <PayNowDialog
+          open={!!payDialogInst}
+          onOpenChange={(open) => { if (!open) setPayDialogInst(null); }}
+          amount={payDialogInst.amount}
+          instalmentNumber={payDialogInst.number}
+          dueDate={format(parseISO(payDialogInst.dueDate), 'dd MMM yyyy')}
+        />
+      )}
     </div>
   );
 }
