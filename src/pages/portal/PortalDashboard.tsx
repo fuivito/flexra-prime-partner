@@ -155,20 +155,59 @@ export default function PortalDashboard() {
             <CardTitle className="text-base">Paid vs Outstanding by Policy</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={agreementBars} barGap={4}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip
-                    contentStyle={{ background: 'hsl(207, 38%, 16%)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: 12 }}
-                    formatter={(value: number) => formatCurrency(value)}
-                  />
-                  <Bar dataKey="paid" stackId="a" fill="hsl(152, 69%, 41%)" radius={[0, 0, 0, 0]} name="Paid" />
-                  <Bar dataKey="outstanding" stackId="a" fill="hsl(174, 76%, 39%)" radius={[4, 4, 0, 0]} name="Outstanding" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {agreementBars.length === 1 ? (
+              /* Single-policy: horizontal progress bars instead of a lonely bar chart */
+              <div className="space-y-4 py-4">
+                <p className="text-sm font-medium">{activeAgreements[0]?.insurerName}</p>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <span>Paid</span>
+                      <span>{formatCurrency(agreementBars[0].paid)}</span>
+                    </div>
+                    <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${(agreementBars[0].paid / (agreementBars[0].paid + agreementBars[0].outstanding)) * 100}%`,
+                          background: 'hsl(152, 69%, 41%)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <span>Outstanding</span>
+                      <span>{formatCurrency(agreementBars[0].outstanding)}</span>
+                    </div>
+                    <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${(agreementBars[0].outstanding / (agreementBars[0].paid + agreementBars[0].outstanding)) * 100}%`,
+                          background: 'hsl(174, 76%, 39%)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={agreementBars} barGap={4}>
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(215, 12%, 35%)" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(207, 38%, 16%)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: 12 }}
+                      formatter={(value: number) => formatCurrency(value)}
+                    />
+                    <Bar dataKey="paid" stackId="a" fill="hsl(152, 69%, 41%)" radius={[0, 0, 0, 0]} name="Paid" maxBarSize={80} />
+                    <Bar dataKey="outstanding" stackId="a" fill="hsl(174, 76%, 39%)" radius={[4, 4, 0, 0]} name="Outstanding" maxBarSize={80} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
 
