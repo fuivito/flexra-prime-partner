@@ -216,10 +216,6 @@ export default function DealBuilder() {
                   <h3 className="text-sm font-semibold text-foreground">Indicative Financing Terms</h3>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                     <div>
-                      <p className="text-xs text-muted-foreground">Financing %</p>
-                      <p className="text-sm font-semibold">{financingPercent}% of premium</p>
-                    </div>
-                    <div>
                       <p className="text-xs text-muted-foreground">Down Payment ({downPaymentPercent}%)</p>
                       <p className="text-sm font-semibold">{formatCurrency(downPayment)}</p>
                     </div>
@@ -228,24 +224,20 @@ export default function DealBuilder() {
                       <p className="text-sm font-semibold">{formatCurrency(financedAmount)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Instalments</p>
-                      <p className="text-sm font-semibold">{instalmentCount} monthly</p>
+                      <p className="text-xs text-muted-foreground">Monthly Payment</p>
+                      <p className="text-sm font-semibold">{formatCurrency(monthlyInstalment)} × {instalmentCount}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">APR</p>
                       <p className="text-sm font-semibold">{apr}%</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Flat Rate</p>
-                      <p className="text-sm font-semibold">{flatRate}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Monthly Instalment</p>
-                      <p className="text-sm font-semibold">{formatCurrency(monthlyInstalment)}</p>
-                    </div>
-                    <div>
                       <p className="text-xs text-muted-foreground">Total Interest</p>
                       <p className="text-sm font-semibold">{formatCurrency(totalInterest)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Customer Pays</p>
+                      <p className="text-sm font-semibold">{formatCurrency(downPayment + totalRepayable)}</p>
                     </div>
                   </div>
                   <div className="border-t border-border/50 pt-3">
@@ -363,10 +355,6 @@ export default function DealBuilder() {
                   <h4 className="text-sm font-semibold text-foreground mb-3">Financing Breakdown</h4>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <p className="text-xs text-muted-foreground">Financing %</p>
-                      <p className="font-semibold">{financingPercent}% of premium</p>
-                    </div>
-                    <div>
                       <p className="text-xs text-muted-foreground">Down Payment ({downPaymentPercent}%)</p>
                       <p className="font-semibold">{formatCurrency(downPayment)}</p>
                     </div>
@@ -375,28 +363,20 @@ export default function DealBuilder() {
                       <p className="font-semibold">{formatCurrency(financedAmount)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Instalments</p>
-                      <p className="font-semibold">{instalmentCount} monthly</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Monthly Instalment</p>
+                      <p className="text-xs text-muted-foreground">Monthly Payment</p>
                       <p className="font-semibold">{formatCurrency(monthlyInstalment)} × {instalmentCount}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Interest</p>
-                      <p className="font-semibold">{formatCurrency(totalInterest)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">APR</p>
                       <p className="font-semibold">{apr}%</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Flat Rate</p>
-                      <p className="font-semibold">{flatRate}%</p>
+                      <p className="text-xs text-muted-foreground">Total Interest</p>
+                      <p className="font-semibold">{formatCurrency(totalInterest)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Total Repayable</p>
-                      <p className="font-semibold">{formatCurrency(totalRepayable)}</p>
+                      <p className="text-xs text-muted-foreground">Total Customer Pays</p>
+                      <p className="font-semibold">{formatCurrency(downPayment + totalRepayable)}</p>
                     </div>
                   </div>
                 </div>
