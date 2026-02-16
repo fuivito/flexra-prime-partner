@@ -43,14 +43,30 @@ export default function DealBuilder() {
     c.email.toLowerCase().includes(clientSearch.toLowerCase())
   );
 
-  // Mock financing terms (would come from credit assessment in real app)
+  // Pre-fill company reg number when client changes
+  const handleSelectClient = (id: string) => {
+    setClientId(id);
+    const selected = mockClients.find(c => c.id === id);
+    if (selected?.companyRegNumber) {
+      setCompanyRegNumber(selected.companyRegNumber);
+    } else {
+      setCompanyRegNumber('');
+    }
+  };
+
+  // Financing terms
   const downPaymentPercent = 20;
+  const financingPercent = 100 - downPaymentPercent;
   const instalmentCount = 10;
   const apr = 12.5;
+  const flatRate = 6.25;
   const downPayment = premium * (downPaymentPercent / 100);
   const financedAmount = premium - downPayment;
-  const monthlyInstalment = financedAmount / instalmentCount;
-  const brokerCommission = premium * 0.02;
+  const totalInterest = financedAmount * (flatRate / 100);
+  const totalRepayable = financedAmount + totalInterest;
+  const monthlyInstalment = instalmentCount > 0 ? totalRepayable / instalmentCount : 0;
+  const brokerCommissionPercent = 2;
+  const brokerCommission = premium * (brokerCommissionPercent / 100);
 
   const canNext = () => {
     if (step === 0) return !!clientId;
@@ -141,7 +157,7 @@ export default function DealBuilder() {
                 {filteredClients.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => setClientId(c.id)}
+                    onClick={() => handleSelectClient(c.id)}
                     className={`w-full text-left rounded-xl border p-4 transition-all ${
                       clientId === c.id
                         ? 'border-accent bg-accent/5 ring-1 ring-accent'
@@ -173,7 +189,9 @@ export default function DealBuilder() {
                   placeholder="e.g. 12345678"
                   className="bg-background/50"
                 />
-                <p className="text-xs text-muted-foreground">This will be used to run a Companies House lookup</p>
+                <p className="text-xs text-muted-foreground">
+                  {client?.companyRegNumber ? 'Pre-filled from client records — edit if needed' : 'This will be used to run a Companies House lookup'}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -191,6 +209,53 @@ export default function DealBuilder() {
                 </div>
                 <p className="text-xs text-muted-foreground">The total insurance premium amount from the policy schedule</p>
               </div>
+
+              {/* Financing terms preview */}
+              {premium > 0 && (
+                <div className="rounded-xl border border-border/50 bg-muted/20 p-5 space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Indicative Financing Terms</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Financing %</p>
+                      <p className="text-sm font-semibold">{financingPercent}% of premium</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Down Payment ({downPaymentPercent}%)</p>
+                      <p className="text-sm font-semibold">{formatCurrency(downPayment)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Financed Amount</p>
+                      <p className="text-sm font-semibold">{formatCurrency(financedAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Instalments</p>
+                      <p className="text-sm font-semibold">{instalmentCount} monthly</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">APR</p>
+                      <p className="text-sm font-semibold">{apr}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Flat Rate</p>
+                      <p className="text-sm font-semibold">{flatRate}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Monthly Instalment</p>
+                      <p className="text-sm font-semibold">{formatCurrency(monthlyInstalment)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Interest</p>
+                      <p className="text-sm font-semibold">{formatCurrency(totalInterest)}</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-border/50 pt-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">Broker Commission ({brokerCommissionPercent}%)</p>
+                      <p className="text-sm font-semibold text-accent">{formatCurrency(brokerCommission)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {client && (
                 <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
@@ -292,25 +357,55 @@ export default function DealBuilder() {
                       <CheckCircle2 className="h-4 w-4" /> Approved
                     </p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Down Payment ({downPaymentPercent}%)</p>
-                    <p className="font-semibold">{formatCurrency(downPayment)}</p>
+                </div>
+
+                <div className="border-t border-border/30 pt-4">
+                  <h4 className="text-sm font-semibold text-foreground mb-3">Financing Breakdown</h4>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Financing %</p>
+                      <p className="font-semibold">{financingPercent}% of premium</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Down Payment ({downPaymentPercent}%)</p>
+                      <p className="font-semibold">{formatCurrency(downPayment)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Financed Amount</p>
+                      <p className="font-semibold">{formatCurrency(financedAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Instalments</p>
+                      <p className="font-semibold">{instalmentCount} monthly</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Monthly Instalment</p>
+                      <p className="font-semibold">{formatCurrency(monthlyInstalment)} × {instalmentCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Interest</p>
+                      <p className="font-semibold">{formatCurrency(totalInterest)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">APR</p>
+                      <p className="font-semibold">{apr}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Flat Rate</p>
+                      <p className="font-semibold">{flatRate}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Repayable</p>
+                      <p className="font-semibold">{formatCurrency(totalRepayable)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Financed Amount</p>
-                    <p className="font-semibold">{formatCurrency(financedAmount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Monthly Instalment</p>
-                    <p className="font-semibold">{formatCurrency(monthlyInstalment)} × {instalmentCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">APR</p>
-                    <p className="font-semibold">{apr}%</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Broker Commission</p>
-                    <p className="font-semibold text-accent">{formatCurrency(brokerCommission)}</p>
+                </div>
+
+                <div className="border-t border-border/30 pt-4">
+                  <h4 className="text-sm font-semibold text-foreground mb-3">Broker Earnings</h4>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Commission ({brokerCommissionPercent}% of premium)</p>
+                    <p className="text-lg font-bold text-accent">{formatCurrency(brokerCommission)}</p>
                   </div>
                 </div>
               </div>

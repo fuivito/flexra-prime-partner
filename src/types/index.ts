@@ -16,6 +16,7 @@ export interface Client {
   email: string;
   phone: string;
   businessType: string;
+  companyRegNumber?: string;
   createdAt: string;
 }
 
