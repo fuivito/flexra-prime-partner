@@ -25,6 +25,7 @@ export const mockClients: Client[] = [
     email: 'james@techcorp.com',
     phone: '+1 (555) 234-5678',
     businessType: 'Technology',
+    companyRegNumber: '08745231',
     createdAt: '2025-11-15',
   },
   {
@@ -34,6 +35,7 @@ export const mockClients: Client[] = [
     email: 'maria@greenvalley.com',
     phone: '+1 (555) 345-6789',
     businessType: 'Construction',
+    companyRegNumber: '11294076',
     createdAt: '2025-12-01',
   },
   {
@@ -43,6 +45,7 @@ export const mockClients: Client[] = [
     email: 'rkim@pinnacle.com',
     phone: '+1 (555) 456-7890',
     businessType: 'Healthcare',
+    companyRegNumber: '06381952',
     createdAt: '2026-01-10',
   },
   {
