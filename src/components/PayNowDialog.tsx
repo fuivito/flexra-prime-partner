@@ -8,10 +8,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, CreditCard, CheckCircle2, Loader2, Landmark, Wallet } from 'lucide-react';
+import { Building2, CreditCard, CheckCircle2, Loader2, Landmark, Wallet, Plus } from 'lucide-react';
 
 interface PayNowDialogProps {
   open: boolean;
@@ -29,7 +30,7 @@ interface PaymentMethod {
   icon: typeof Building2;
 }
 
-const paymentMethods: PaymentMethod[] = [
+const defaultPaymentMethods: PaymentMethod[] = [
   { id: 'bank-1', type: 'bank', label: 'National Business Bank', detail: '•••• 4829 · Sort 20-45-67', icon: Landmark },
   { id: 'card-1', type: 'card', label: 'Visa ending 3841', detail: 'Expires 09/27', icon: CreditCard },
   { id: 'card-2', type: 'card', label: 'Mastercard ending 7210', detail: 'Expires 03/28', icon: CreditCard },
@@ -39,7 +40,25 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState(paymentMethods[0].id);
+  const [methods, setMethods] = useState<PaymentMethod[]>(defaultPaymentMethods);
+  const [selectedMethod, setSelectedMethod] = useState(defaultPaymentMethods[0].id);
+  const [showNewBank, setShowNewBank] = useState(false);
+  const [newBank, setNewBank] = useState({ name: '', sortCode: '', accountNumber: '' });
+
+  const handleAddBank = () => {
+    const id = `bank-new-${Date.now()}`;
+    const added: PaymentMethod = {
+      id,
+      type: 'bank',
+      label: newBank.name,
+      detail: `•••• ${newBank.accountNumber.slice(-4)} · Sort ${newBank.sortCode}`,
+      icon: Landmark,
+    };
+    setMethods(prev => [...prev, added]);
+    setSelectedMethod(id);
+    setShowNewBank(false);
+    setNewBank({ name: '', sortCode: '', accountNumber: '' });
+  };
 
   const handleConfirm = () => {
     setProcessing(true);
@@ -60,7 +79,11 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
   const handleClose = (val: boolean) => {
     if (!processing) {
       onOpenChange(val);
-      if (!val) setConfirmed(false);
+      if (!val) {
+        setConfirmed(false);
+        setShowNewBank(false);
+        setNewBank({ name: '', sortCode: '', accountNumber: '' });
+      }
     }
   };
 
@@ -104,7 +127,7 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
                   <Wallet className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm font-medium">Payment Method</p>
                 </div>
-                {paymentMethods.map((method) => {
+                {methods.map((method) => {
                   const Icon = method.icon;
                   const isSelected = selectedMethod === method.id;
                   return (
@@ -133,6 +156,45 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
                     </button>
                   );
                 })}
+
+                {!showNewBank ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewBank(true)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-muted-foreground/30 text-left transition-all hover:border-accent hover:bg-accent/5"
+                  >
+                    <div className="h-8 w-8 rounded-md flex items-center justify-center bg-muted">
+                      <Plus className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Add new bank account</p>
+                  </button>
+                ) : (
+                  <div className="space-y-3 p-3 rounded-lg border border-accent bg-accent/5">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Landmark className="h-4 w-4 text-accent" />
+                      New Bank Account
+                    </p>
+                    <div className="space-y-2">
+                      <Input placeholder="Account holder name" value={newBank.name} onChange={e => setNewBank({...newBank, name: e.target.value})} className="bg-background/50 h-9 text-sm" />
+                      <Input placeholder="Sort code (e.g. 20-45-67)" value={newBank.sortCode} onChange={e => setNewBank({...newBank, sortCode: e.target.value})} className="bg-background/50 h-9 text-sm" />
+                      <Input placeholder="Account number" value={newBank.accountNumber} onChange={e => setNewBank({...newBank, accountNumber: e.target.value})} className="bg-background/50 h-9 text-sm" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => { setShowNewBank(false); setNewBank({ name: '', sortCode: '', accountNumber: '' }); }}>
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
+                        disabled={!newBank.name || !newBank.sortCode || !newBank.accountNumber}
+                        onClick={handleAddBank}
+                      >
+                        Add & Select
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
