@@ -2,12 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockAgreements, mockClients, mockActivity } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { Users, FileText, Send, CheckCircle2, DollarSign, Activity, AlertTriangle, PlusCircle, UserPlus } from 'lucide-react';
+import { Users, FileText, Send, CheckCircle2, DollarSign, Activity, AlertTriangle, PlusCircle, UserPlus, TrendingUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AgreementStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
@@ -37,13 +37,16 @@ const monthlyVolumeData = [
   { month: 'Feb', value: 150000 },
 ];
 
-const collectionData = [
-  { month: 'Oct', collected: 6000, outstanding: 0 },
-  { month: 'Nov', collected: 14167, outstanding: 0 },
-  { month: 'Dec', collected: 20167, outstanding: 0 },
-  { month: 'Jan', collected: 28167, outstanding: 8000 },
-  { month: 'Feb', collected: 18625, outstanding: 8000 },
+// Cumulative broker commission earnings (mock ~3% of financed volume)
+const commissionData = [
+  { month: 'Sep', earnings: 1350 },
+  { month: 'Oct', earnings: 7350 },
+  { month: 'Nov', earnings: 7350 },
+  { month: 'Dec', earnings: 10950 },
+  { month: 'Jan', earnings: 13500 },
+  { month: 'Feb', earnings: 18000 },
 ];
+const totalCommission = commissionData[commissionData.length - 1].earnings;
 
 export default function BrokerDashboard() {
   const navigate = useNavigate();
@@ -184,15 +187,24 @@ export default function BrokerDashboard() {
 
       {/* Collections + Recent */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Collections Bar Chart */}
+        {/* Broker Commission Earnings */}
         <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-base">Collections</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-accent" /> Commission Earned
+            </CardTitle>
+            <p className="text-2xl font-bold text-foreground">{formatCurrency(totalCommission)}</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px] w-full">
+            <div className="h-[170px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={collectionData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                <AreaChart data={commissionData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="commissionGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 18%, 86%)" strokeOpacity={0.5} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
@@ -204,11 +216,10 @@ export default function BrokerDashboard() {
                       borderRadius: '12px',
                       boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                     }}
-                    formatter={(value: number, name: string) => [formatCurrency(value), name === 'collected' ? 'Collected' : 'Outstanding']}
+                    formatter={(value: number) => [formatCurrency(value), 'Cumulative Earnings']}
                   />
-                  <Bar dataKey="collected" fill="hsl(174, 76%, 39%)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="outstanding" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Area type="monotone" dataKey="earnings" stroke="hsl(38, 92%, 50%)" strokeWidth={2.5} fill="url(#commissionGradient)" />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
