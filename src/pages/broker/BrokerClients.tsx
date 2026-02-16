@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { mockClients } from '@/data/mock-data';
-import { Plus, Search, Upload } from 'lucide-react';
+import { Plus, Search, Upload, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Client } from '@/types';
 
@@ -51,39 +52,77 @@ export default function BrokerClients() {
                 <Plus className="mr-2 h-4 w-4" /> Add Client
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md glass-card">
-              <DialogHeader>
-                <DialogTitle>Add New Client</DialogTitle>
+            <DialogContent className="sm:max-w-lg glass-card p-0 gap-0">
+              <DialogHeader className="p-6 pb-4">
+                <DialogTitle className="text-xl font-bold">Add Client</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Upload a PDF document or enter client details manually
+                </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleAdd} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Company Name</Label>
-                  <Input required value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="bg-background/50" />
+
+              <Tabs defaultValue="upload" className="w-full">
+                <div className="px-6">
+                  <TabsList className="w-full grid grid-cols-2">
+                    <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+                    <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                  </TabsList>
                 </div>
-                <div className="space-y-2">
-                  <Label>Contact Person</Label>
-                  <Input required value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} className="bg-background/50" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="bg-background/50" />
+
+                {/* Upload PDF Tab */}
+                <TabsContent value="upload" className="p-6 pt-4 space-y-4">
+                  <div className="rounded-xl border-2 border-dashed border-border p-10 text-center hover:border-accent/50 hover:bg-accent/5 transition-colors cursor-pointer">
+                    <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                    <p className="text-sm font-medium text-foreground">Upload PDF Document</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Drag and drop your PDF file here, or click to browse
+                    </p>
+                    <p className="mt-3 text-xs text-muted-foreground">Supported format: PDF (max 10MB)</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Phone</Label>
-                    <Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-background/50" />
+                  {/* AI extraction note */}
+                  <div className="flex items-start gap-2 rounded-lg bg-accent/5 border border-accent/20 p-3">
+                    <Sparkles className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Our AI will automatically extract client details from your PDF, so you don't have to enter them manually.
+                    </p>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Business Type</Label>
-                  <Input required value={form.businessType} onChange={(e) => setForm({ ...form, businessType: e.target.value })} className="bg-background/50" />
-                </div>
-                <div className="rounded-xl border-2 border-dashed border-border p-6 text-center">
-                  <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                  <p className="mt-2 text-sm text-muted-foreground">Drop PDF here (mock)</p>
-                </div>
-                <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 rounded-full">Add Client</Button>
-              </form>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button variant="outline" className="rounded-full px-5" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                    <Button className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-5">Save Client</Button>
+                  </div>
+                </TabsContent>
+
+                {/* Manual Entry Tab */}
+                <TabsContent value="manual" className="p-6 pt-4">
+                  <form onSubmit={handleAdd} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Company Name</Label>
+                      <Input required value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="bg-background/50" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Contact Person</Label>
+                      <Input required value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} className="bg-background/50" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="bg-background/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Phone</Label>
+                        <Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-background/50" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Business Type</Label>
+                      <Input required value={form.businessType} onChange={(e) => setForm({ ...form, businessType: e.target.value })} className="bg-background/50" />
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                      <Button type="button" variant="outline" className="rounded-full px-5" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                      <Button type="submit" className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-5">Save Client</Button>
+                    </div>
+                  </form>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
