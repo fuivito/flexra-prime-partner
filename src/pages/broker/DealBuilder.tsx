@@ -38,10 +38,16 @@ export default function DealBuilder() {
   const client = mockClients.find(c => c.id === clientId);
   const premium = parseFloat(premiumAmount) || 0;
 
-  const filteredClients = mockClients.filter(c =>
-    c.companyName.toLowerCase().includes(clientSearch.toLowerCase()) ||
-    c.email.toLowerCase().includes(clientSearch.toLowerCase())
-  );
+  const filteredClients = mockClients
+    .filter(c =>
+      c.companyName.toLowerCase().includes(clientSearch.toLowerCase()) ||
+      c.email.toLowerCase().includes(clientSearch.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (a.id === clientId) return -1;
+      if (b.id === clientId) return 1;
+      return 0;
+    });
 
   // Pre-fill company reg number when client changes
   const handleSelectClient = (id: string) => {
@@ -58,14 +64,14 @@ export default function DealBuilder() {
   const downPaymentPercent = 20;
   const financingPercent = 100 - downPaymentPercent;
   const instalmentCount = 10;
-  const apr = 12.5;
-  const flatRate = 6.25;
+  const apr = 9.5;
+  const flatRate = apr / 2;
   const downPayment = premium * (downPaymentPercent / 100);
   const financedAmount = premium - downPayment;
   const totalInterest = financedAmount * (flatRate / 100);
   const totalRepayable = financedAmount + totalInterest;
   const monthlyInstalment = instalmentCount > 0 ? totalRepayable / instalmentCount : 0;
-  const brokerCommissionPercent = 2;
+  const brokerCommissionPercent = premium < 25000 ? 4.5 : premium <= 100000 ? 3.5 : 2.5;
   const brokerCommission = premium * (brokerCommissionPercent / 100);
 
   const canNext = () => {
@@ -236,7 +242,7 @@ export default function DealBuilder() {
                       <p className="text-sm font-semibold">{formatCurrency(totalInterest)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Total Customer Pays</p>
+                      <p className="text-xs text-muted-foreground">Total Customer Pays (Down payment + instalments)</p>
                       <p className="text-sm font-semibold">{formatCurrency(downPayment + totalRepayable)}</p>
                     </div>
                   </div>
@@ -375,7 +381,7 @@ export default function DealBuilder() {
                       <p className="font-semibold">{formatCurrency(totalInterest)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Total Customer Pays</p>
+                      <p className="text-xs text-muted-foreground">Total Customer Pays (Down payment + instalments)</p>
                       <p className="font-semibold">{formatCurrency(downPayment + totalRepayable)}</p>
                     </div>
                   </div>
