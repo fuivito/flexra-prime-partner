@@ -98,34 +98,6 @@ export default function BrokerDashboard() {
         ))}
       </div>
 
-      {/* Overdue Alert */}
-      {overdueInstalments.length > 0 && (
-        <Card className="glass-card border-destructive/30 bg-destructive/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-destructive text-base">
-              <AlertTriangle className="h-4 w-4" /> Missed Instalments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {overdueInstalments.map((inst) => (
-                <Link
-                  key={inst.id}
-                  to={`/broker/agreements/${inst.agreementId}`}
-                  className="flex items-center justify-between rounded-lg p-3 hover:bg-destructive/10 transition-colors"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
-                    <p className="text-xs text-muted-foreground">Instalment #{inst.number} — Due {inst.dueDate}</p>
-                  </div>
-                  <span className="text-sm font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Monthly Volume - Area Chart */}
@@ -272,6 +244,34 @@ export default function BrokerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Overdue Alert — just above Activity */}
+      {overdueInstalments.length > 0 && (
+        <Card className="glass-card border-destructive/30 bg-destructive/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-destructive text-base">
+              <AlertTriangle className="h-4 w-4" /> Missed Instalments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {overdueInstalments.map((inst) => (
+                <Link
+                  key={inst.id}
+                  to={`/broker/agreements/${inst.agreementId}`}
+                  className="flex items-center justify-between rounded-lg p-3 hover:bg-destructive/10 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
+                    <p className="text-xs text-muted-foreground">Instalment #{inst.number} — Due {inst.dueDate}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Activity Feed */}
       <Card className="glass-card">
