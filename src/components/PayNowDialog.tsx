@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, CreditCard, CheckCircle2, Loader2 } from 'lucide-react';
+import { Building2, CreditCard, CheckCircle2, Loader2, Landmark, Wallet } from 'lucide-react';
 
 interface PayNowDialogProps {
   open: boolean;
@@ -21,17 +21,25 @@ interface PayNowDialogProps {
   dueDate: string;
 }
 
-const mockBankDetails = {
-  accountName: 'TechCorp Solutions Ltd',
-  bank: 'National Business Bank',
-  accountNumber: '•••• •••• 4829',
-  sortCode: '20-45-67',
-};
+interface PaymentMethod {
+  id: string;
+  type: 'bank' | 'card';
+  label: string;
+  detail: string;
+  icon: typeof Building2;
+}
+
+const paymentMethods: PaymentMethod[] = [
+  { id: 'bank-1', type: 'bank', label: 'National Business Bank', detail: '•••• 4829 · Sort 20-45-67', icon: Landmark },
+  { id: 'card-1', type: 'card', label: 'Visa ending 3841', detail: 'Expires 09/27', icon: CreditCard },
+  { id: 'card-2', type: 'card', label: 'Mastercard ending 7210', detail: 'Expires 03/28', icon: CreditCard },
+];
 
 export default function PayNowDialog({ open, onOpenChange, amount, instalmentNumber, dueDate }: PayNowDialogProps) {
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState(paymentMethods[0].id);
 
   const handleConfirm = () => {
     setProcessing(true);
@@ -90,22 +98,41 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
                 </div>
               </div>
 
-              {/* Bank details */}
-              <div className="rounded-lg border border-border p-4 space-y-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm font-medium">Paying from</p>
+              {/* Payment method selector */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-medium">Payment Method</p>
                 </div>
-                <div className="grid grid-cols-2 gap-y-2 text-sm">
-                  <span className="text-muted-foreground">Account</span>
-                  <span className="font-medium text-right">{mockBankDetails.accountName}</span>
-                  <span className="text-muted-foreground">Bank</span>
-                  <span className="font-medium text-right">{mockBankDetails.bank}</span>
-                  <span className="text-muted-foreground">Account No.</span>
-                  <span className="font-mono text-right">{mockBankDetails.accountNumber}</span>
-                  <span className="text-muted-foreground">Sort Code</span>
-                  <span className="font-mono text-right">{mockBankDetails.sortCode}</span>
-                </div>
+                {paymentMethods.map((method) => {
+                  const Icon = method.icon;
+                  const isSelected = selectedMethod === method.id;
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => setSelectedMethod(method.id)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                        isSelected
+                          ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
+                          : 'border-border hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <div className={`h-8 w-8 rounded-md flex items-center justify-center ${
+                        isSelected ? 'bg-accent/10' : 'bg-muted'
+                      }`}>
+                        <Icon className={`h-4 w-4 ${isSelected ? 'text-accent' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{method.label}</p>
+                        <p className="text-xs text-muted-foreground">{method.detail}</p>
+                      </div>
+                      {isSelected && (
+                        <CheckCircle2 className="h-4 w-4 text-accent flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
