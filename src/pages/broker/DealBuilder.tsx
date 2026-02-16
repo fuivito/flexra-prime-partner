@@ -250,8 +250,9 @@ export default function DealBuilder() {
                       />
                     </div>
                   </div>
-                  <div className="border-t border-border/50 pt-3 text-sm text-muted-foreground">
-                    Total Premium: <span className="font-semibold text-foreground">{formatCurrency(premium)}</span>
+                  <div className="border-t border-border/50 pt-3 flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Total Premium: <span className="font-semibold text-foreground">{formatCurrency(premium)}</span></span>
+                    <span className="text-xs text-muted-foreground italic">APR confirmed after credit assessment</span>
                   </div>
                 </div>
               )}
