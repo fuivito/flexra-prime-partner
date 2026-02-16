@@ -31,6 +31,8 @@ export default function DealBuilder() {
   // Step 2
   const [companyRegNumber, setCompanyRegNumber] = useState('');
   const [premiumAmount, setPremiumAmount] = useState('');
+  const [downPaymentPercent, setDownPaymentPercent] = useState(20);
+  const [instalmentCount, setInstalmentCount] = useState(10);
 
   // Step 3
   const [creditResult, setCreditResult] = useState<CreditResult>(null);
@@ -61,9 +63,6 @@ export default function DealBuilder() {
   };
 
   // Financing terms
-  const downPaymentPercent = 20;
-  const financingPercent = 100 - downPaymentPercent;
-  const instalmentCount = 10;
   const apr = 9.5;
   const flatRate = apr / 2;
   const downPayment = premium * (downPaymentPercent / 100);
@@ -187,6 +186,14 @@ export default function DealBuilder() {
                 <p className="text-sm text-muted-foreground mt-1">Enter the company registration number and policy premium amount</p>
               </div>
 
+              {client && (
+                <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                  <p className="text-xs text-muted-foreground mb-1">Selected client</p>
+                  <p className="font-medium text-foreground">{client.companyName}</p>
+                  <p className="text-sm text-muted-foreground">{client.email}</p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Company Registration Number</Label>
                 <Input
@@ -216,50 +223,36 @@ export default function DealBuilder() {
                 <p className="text-xs text-muted-foreground">The total insurance premium amount from the policy schedule</p>
               </div>
 
-              {/* Financing terms preview */}
               {premium > 0 && (
                 <div className="rounded-xl border border-border/50 bg-muted/20 p-5 space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground">Indicative Financing Terms</h3>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Down Payment ({downPaymentPercent}%)</p>
-                      <p className="text-sm font-semibold">{formatCurrency(downPayment)}</p>
+                  <h3 className="text-sm font-semibold text-foreground">Financing Options</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Down Payment (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={downPaymentPercent}
+                        onChange={(e) => setDownPaymentPercent(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                        className="bg-background/50"
+                      />
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Financed Amount</p>
-                      <p className="text-sm font-semibold">{formatCurrency(financedAmount)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Monthly Payment</p>
-                      <p className="text-sm font-semibold">{formatCurrency(monthlyInstalment)} × {instalmentCount}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">APR</p>
-                      <p className="text-sm font-semibold text-muted-foreground/60 italic">Subject to credit assessment</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Interest</p>
-                      <p className="text-sm font-semibold">{formatCurrency(totalInterest)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Customer Pays (Down payment + instalments)</p>
-                      <p className="text-sm font-semibold">{formatCurrency(downPayment + totalRepayable)}</p>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Number of Instalments</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={instalmentCount}
+                        onChange={(e) => setInstalmentCount(Math.min(12, Math.max(1, parseInt(e.target.value) || 1)))}
+                        className="bg-background/50"
+                      />
                     </div>
                   </div>
-                  <div className="border-t border-border/50 pt-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">Broker Commission ({brokerCommissionPercent}%)</p>
-                      <p className="text-sm font-semibold text-accent">{formatCurrency(brokerCommission)}</p>
-                    </div>
+                  <div className="border-t border-border/50 pt-3 text-sm text-muted-foreground">
+                    Total Premium: <span className="font-semibold text-foreground">{formatCurrency(premium)}</span>
                   </div>
-                </div>
-              )}
-
-              {client && (
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Selected client</p>
-                  <p className="font-medium text-foreground">{client.companyName}</p>
-                  <p className="text-sm text-muted-foreground">{client.email}</p>
                 </div>
               )}
             </div>
