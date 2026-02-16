@@ -235,7 +235,7 @@ export default function DealBuilder() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">APR</p>
-                      <p className="text-sm font-semibold">{apr}%</p>
+                      <p className="text-sm font-semibold text-muted-foreground/60 italic">Subject to credit assessment</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Total Interest</p>
@@ -307,10 +307,16 @@ export default function DealBuilder() {
               )}
 
               {creditResult === 'approved' && (
-                <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-6 text-center">
-                  <CheckCircle2 className="mx-auto h-10 w-10 text-accent mb-3" />
-                  <p className="text-lg font-semibold text-foreground">Approved</p>
-                  <p className="text-sm text-muted-foreground mt-1">The company has passed the initial credit assessment. You can proceed to review the financing terms.</p>
+                <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-6 space-y-4">
+                  <div className="text-center">
+                    <CheckCircle2 className="mx-auto h-10 w-10 text-accent mb-3" />
+                    <p className="text-lg font-semibold text-foreground">Approved</p>
+                    <p className="text-sm text-muted-foreground mt-1">The company has passed the initial credit assessment. You can proceed to review the financing terms.</p>
+                  </div>
+                  <div className="border-t border-accent/20 pt-4 flex items-center justify-center gap-2">
+                    <p className="text-sm text-muted-foreground">Your approved rate:</p>
+                    <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-sm font-bold text-accent">{apr}% APR</span>
+                  </div>
                 </div>
               )}
 
