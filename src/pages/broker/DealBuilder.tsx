@@ -8,7 +8,8 @@ import { mockClients, mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Search, Plus, Users, Building2, ShieldCheck, FileText, Loader2, CheckCircle2, XCircle, Download, Send } from 'lucide-react';
-import { Client } from '@/types';
+import { Client, Agreement } from '@/types';
+import { generateAgreementPDF } from '@/lib/pdf-generator';
 
 const steps = [
   { label: 'Select Client', icon: Users },
@@ -94,6 +95,33 @@ export default function DealBuilder() {
       return;
     }
     setStep(step + 1);
+  };
+
+  const handleDownloadPreview = () => {
+    if (!client) return;
+    const today = new Date().toISOString().split('T')[0];
+    const mockAgreement: Agreement = {
+      id: `draft-${Date.now()}`,
+      clientId: client.id,
+      clientName: client.companyName,
+      premiumAmount: premium,
+      policyPeriodStart: today,
+      policyPeriodEnd: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+      insurerName: 'TBC',
+      downPaymentPercent,
+      instalmentCount,
+      status: 'pending',
+      createdAt: today,
+      instalments: Array.from({ length: instalmentCount }, (_, i) => ({
+        id: `draft-inst-${i + 1}`,
+        agreementId: `draft-${Date.now()}`,
+        number: i + 1,
+        amount: monthlyInstalment,
+        dueDate: new Date(new Date().setMonth(new Date().getMonth() + i + 1)).toISOString().split('T')[0],
+        status: 'upcoming' as const,
+      })),
+    };
+    generateAgreementPDF(mockAgreement);
   };
 
   const handleCreate = () => {
@@ -406,7 +434,7 @@ export default function DealBuilder() {
                   <p className="font-medium">Premium Financing Agreement</p>
                   <p className="text-sm mt-1">A professional document will be generated with full terms and payment schedule</p>
                 </div>
-                <Button variant="outline" className="mt-4 gap-2 w-full">
+                <Button variant="outline" className="mt-4 gap-2 w-full" onClick={handleDownloadPreview}>
                   <Download className="h-4 w-4" /> Download Agreement Preview
                 </Button>
               </div>
