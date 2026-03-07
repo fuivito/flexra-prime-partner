@@ -175,6 +175,14 @@ export function generateAgreementPDF(agreement: Agreement) {
   doc.setFillColor(...accent);
   doc.rect(0, pageHeight - 4, pageWidth, 4, 'F');
 
-  // Save
-  doc.save(`Flexra-Agreement-${agreement.id.toUpperCase()}.pdf`);
+  // Save using blob URL to work in sandboxed iframes
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Flexra-Agreement-${agreement.id.toUpperCase()}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
