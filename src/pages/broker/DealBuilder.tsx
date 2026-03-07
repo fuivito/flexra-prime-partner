@@ -97,6 +97,33 @@ export default function DealBuilder() {
     setStep(step + 1);
   };
 
+  const handleDownloadPreview = () => {
+    if (!client) return;
+    const today = new Date().toISOString().split('T')[0];
+    const mockAgreement: Agreement = {
+      id: `draft-${Date.now()}`,
+      clientId: client.id,
+      clientName: client.companyName,
+      premiumAmount: premium,
+      policyPeriodStart: today,
+      policyPeriodEnd: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+      insurerName: 'TBC',
+      downPaymentPercent,
+      instalmentCount,
+      status: 'pending',
+      createdAt: today,
+      instalments: Array.from({ length: instalmentCount }, (_, i) => ({
+        id: `draft-inst-${i + 1}`,
+        agreementId: `draft-${Date.now()}`,
+        number: i + 1,
+        amount: monthlyInstalment,
+        dueDate: new Date(new Date().setMonth(new Date().getMonth() + i + 1)).toISOString().split('T')[0],
+        status: 'upcoming' as const,
+      })),
+    };
+    generateAgreementPDF(mockAgreement);
+  };
+
   const handleCreate = () => {
     toast({ title: 'Agreement sent', description: `Financing agreement for ${client?.companyName} has been sent to the client.` });
     navigate(`/broker/agreements/${mockAgreements[0].id}`);
