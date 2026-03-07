@@ -434,7 +434,7 @@ export default function DealBuilder() {
                   <p className="font-medium">Premium Financing Agreement</p>
                   <p className="text-sm mt-1">A professional document will be generated with full terms and payment schedule</p>
                 </div>
-                <Button variant="outline" className="mt-4 gap-2 w-full">
+                <Button variant="outline" className="mt-4 gap-2 w-full" onClick={handleDownloadPreview}>
                   <Download className="h-4 w-4" /> Download Agreement Preview
                 </Button>
               </div>
