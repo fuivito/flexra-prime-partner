@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { ArrowLeft, Shield, Building, Calendar, DollarSign, FileDown, Phone, Mail, MapPin, Hash } from 'lucide-react';
+import { ArrowLeft, Shield, Building, Calendar, DollarSign, FileDown, Phone, Mail, MapPin, Hash, TrendingDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { generateAgreementPDF } from '@/lib/pdf-generator';
+import { calculateEarlySettlement } from '@/lib/early-settlement';
 
 const statusColors: Record<string, string> = {
   active: 'bg-success/10 text-success border-success/20',
@@ -17,7 +18,6 @@ const statusColors: Record<string, string> = {
 
 export default function PortalAgreementDetail() {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
   const agreement = mockAgreements.find(a => a.id === id);
 
   if (!agreement) {
@@ -32,10 +32,7 @@ export default function PortalAgreementDetail() {
   const paidCount = agreement.instalments.filter(i => i.status === 'paid').length;
   const progressPercent = (paidCount / agreement.instalments.length) * 100;
   const financedAmount = agreement.premiumAmount * (1 - agreement.downPaymentPercent / 100);
-
-  const handleDownload = () => {
-    toast({ title: 'Download started', description: 'Your finance agreement PDF is being prepared.' });
-  };
+  const settlement = agreement.status === 'active' ? calculateEarlySettlement(agreement) : null;
 
   return (
     <div className="space-y-6">
@@ -54,7 +51,7 @@ export default function PortalAgreementDetail() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3 ml-12 sm:ml-0">
           <Badge variant="outline" className={statusColors[agreement.status] || ''}>{agreement.status}</Badge>
-          <Button onClick={handleDownload} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
+          <Button onClick={() => generateAgreementPDF(agreement)} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
             <FileDown className="h-4 w-4" /> <span className="hidden sm:inline">Download</span> Agreement
           </Button>
         </div>
@@ -183,6 +180,49 @@ export default function PortalAgreementDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Early Settlement */}
+      {settlement && settlement.remainingInstalments > 0 && (
+        <Card className="glass-card border-accent/20 overflow-hidden relative">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent via-accent/50 to-transparent" />
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <TrendingDown className="h-5 w-5 text-accent" />
+              </div>
+              <div className="flex-1 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-base">Early Settlement</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Settle your remaining balance today and save on interest. Calculated using the Rule of 78 method.
+                  </p>
+                </div>
+                <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Remaining Balance</p>
+                    <p className="text-lg font-bold">{formatCurrency(settlement.remainingBalance)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Interest Rebate</p>
+                    <p className="text-lg font-bold text-success">-{formatCurrency(settlement.interestRebate)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Settlement Amount</p>
+                    <p className="text-lg font-bold text-accent">{formatCurrency(settlement.settlementAmount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">You Save</p>
+                    <p className="text-lg font-bold text-success">{formatCurrency(settlement.saving)} ({settlement.savingPercent.toFixed(1)}%)</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  This is an indicative quote. Contact Flexra Finance to confirm your settlement figure.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

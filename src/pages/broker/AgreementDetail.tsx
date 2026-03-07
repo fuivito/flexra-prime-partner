@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgreementStatus, InstalmentStatus } from '@/types';
+import { generateAgreementPDF } from '@/lib/pdf-generator';
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
@@ -33,7 +34,17 @@ export default function AgreementDetail() {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{agreement.clientName}</h1>
-        <Badge variant="outline" className={statusColors[agreement.status]}>{agreement.status}</Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => generateAgreementPDF(agreement)}
+          >
+            <FileDown className="h-4 w-4" /> Download PDF
+          </Button>
+          <Badge variant="outline" className={statusColors[agreement.status]}>{agreement.status}</Badge>
+        </div>
       </div>
 
       <Card className="glass-card">
