@@ -8,7 +8,8 @@ import { mockClients, mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Search, Plus, Users, Building2, ShieldCheck, FileText, Loader2, CheckCircle2, XCircle, Download, Send } from 'lucide-react';
-import { Client } from '@/types';
+import { Client, Agreement } from '@/types';
+import { generateAgreementPDF } from '@/lib/pdf-generator';
 
 const steps = [
   { label: 'Select Client', icon: Users },
