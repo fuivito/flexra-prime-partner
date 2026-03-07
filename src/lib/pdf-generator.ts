@@ -10,10 +10,10 @@ export function generateAgreementPDF(agreement: Agreement) {
   const contentWidth = pageWidth - margin * 2;
   let y = 20;
 
-  const navy = [15, 23, 42]; // brand navy
-  const gray = [100, 116, 139];
-  const accent = [20, 158, 133]; // teal accent
-  const black = [30, 41, 59];
+  const navy: [number, number, number] = [15, 23, 42];
+  const gray: [number, number, number] = [100, 116, 139];
+  const accent: [number, number, number] = [20, 158, 133];
+  const black: [number, number, number] = [30, 41, 59];
 
   // === Header bar ===
   doc.setFillColor(...accent);
@@ -141,8 +141,8 @@ export function generateAgreementPDF(agreement: Agreement) {
       doc.text(format(parseISO(inst.dueDate), 'dd MMM yyyy'), margin + 20, y);
       doc.text(formatCurrency(inst.amount), margin + 80, y);
 
-      const statusColor = inst.status === 'paid' ? [20, 158, 133] : inst.status === 'overdue' ? [220, 38, 38] : gray;
-      doc.setTextColor(...(statusColor as [number, number, number]));
+      const statusColor: [number, number, number] = inst.status === 'paid' ? [20, 158, 133] : inst.status === 'overdue' ? [220, 38, 38] : gray;
+      doc.setTextColor(...statusColor);
       doc.text(inst.status.charAt(0).toUpperCase() + inst.status.slice(1), margin + 120, y);
 
       y += 5.5;
