@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { ArrowLeft, Shield, Building, Calendar, DollarSign, FileDown, Phone, Mail, MapPin, Hash } from 'lucide-react';
+import { ArrowLeft, Shield, Building, Calendar, DollarSign, FileDown, Phone, Mail, MapPin, Hash, TrendingDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { generateAgreementPDF } from '@/lib/pdf-generator';
+import { calculateEarlySettlement } from '@/lib/early-settlement';
 
 const statusColors: Record<string, string> = {
   active: 'bg-success/10 text-success border-success/20',
@@ -17,7 +18,6 @@ const statusColors: Record<string, string> = {
 
 export default function PortalAgreementDetail() {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
   const agreement = mockAgreements.find(a => a.id === id);
 
   if (!agreement) {
@@ -32,10 +32,7 @@ export default function PortalAgreementDetail() {
   const paidCount = agreement.instalments.filter(i => i.status === 'paid').length;
   const progressPercent = (paidCount / agreement.instalments.length) * 100;
   const financedAmount = agreement.premiumAmount * (1 - agreement.downPaymentPercent / 100);
-
-  const handleDownload = () => {
-    toast({ title: 'Download started', description: 'Your finance agreement PDF is being prepared.' });
-  };
+  const settlement = agreement.status === 'active' ? calculateEarlySettlement(agreement) : null;
 
   return (
     <div className="space-y-6">
@@ -54,7 +51,7 @@ export default function PortalAgreementDetail() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3 ml-12 sm:ml-0">
           <Badge variant="outline" className={statusColors[agreement.status] || ''}>{agreement.status}</Badge>
-          <Button onClick={handleDownload} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
+          <Button onClick={() => generateAgreementPDF(agreement)} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
             <FileDown className="h-4 w-4" /> <span className="hidden sm:inline">Download</span> Agreement
           </Button>
         </div>
