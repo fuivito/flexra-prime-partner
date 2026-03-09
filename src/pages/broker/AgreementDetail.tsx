@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { ArrowLeft, AlertTriangle, FileDown } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, FileDown, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgreementStatus, InstalmentStatus } from '@/types';
 import { generateAgreementPDF } from '@/lib/pdf-generator';
+import { calculateEarlySettlement } from '@/lib/early-settlement';
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
