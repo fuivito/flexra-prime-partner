@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { ArrowLeft, AlertTriangle, FileDown } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, FileDown, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgreementStatus, InstalmentStatus } from '@/types';
 import { generateAgreementPDF } from '@/lib/pdf-generator';
+import { calculateEarlySettlement } from '@/lib/early-settlement';
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
@@ -25,6 +26,7 @@ export default function AgreementDetail() {
   const financed = agreement.premiumAmount - downPayment;
   const paid = agreement.instalments.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
   const overdueInstalments = agreement.instalments.filter(i => i.status === 'overdue');
+  const settlement = agreement.status === 'active' ? calculateEarlySettlement(agreement) : null;
 
   return (
     <div className="space-y-6">
@@ -110,6 +112,49 @@ export default function AgreementDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Early Settlement */}
+      {settlement && settlement.remainingInstalments > 0 && (
+        <Card className="glass-card border-accent/20 overflow-hidden relative">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent via-accent/50 to-transparent" />
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <TrendingDown className="h-5 w-5 text-accent" />
+              </div>
+              <div className="flex-1 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-base">Early Settlement Quote</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Rule of 78 calculation for early payoff. Share this quote with the client.
+                  </p>
+                </div>
+                <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Remaining Balance</p>
+                    <p className="text-lg font-bold">{formatCurrency(settlement.remainingBalance)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Interest Rebate</p>
+                    <p className="text-lg font-bold text-success">-{formatCurrency(settlement.interestRebate)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Settlement Amount</p>
+                    <p className="text-lg font-bold text-accent">{formatCurrency(settlement.settlementAmount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Client Saves</p>
+                    <p className="text-lg font-bold text-success">{formatCurrency(settlement.saving)} ({settlement.savingPercent.toFixed(1)}%)</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  Indicative quote only. Final settlement figure subject to confirmation.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
