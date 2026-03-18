@@ -8,7 +8,7 @@ import { formatCurrency } from '@/lib/calculator';
 import { ArrowLeft, Shield, Building, Calendar, DollarSign, FileDown, Phone, Mail, MapPin, Hash } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { generateAgreementPDF } from '@/lib/pdf-generator';
-import { calculateEarlySettlement } from '@/lib/early-settlement';
+
 
 const statusColors: Record<string, string> = {
   active: 'bg-success/10 text-success border-success/20',
