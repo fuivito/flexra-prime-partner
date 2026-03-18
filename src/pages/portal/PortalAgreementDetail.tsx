@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { ArrowLeft, Shield, Building, Calendar, DollarSign, FileDown, Phone, Mail, MapPin, Hash, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Shield, Building, Calendar, DollarSign, FileDown, Phone, Mail, MapPin, Hash } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { generateAgreementPDF } from '@/lib/pdf-generator';
 import { calculateEarlySettlement } from '@/lib/early-settlement';
