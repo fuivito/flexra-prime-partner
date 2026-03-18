@@ -7,7 +7,7 @@ import { ArrowLeft, AlertTriangle, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgreementStatus, InstalmentStatus } from '@/types';
 import { generateAgreementPDF } from '@/lib/pdf-generator';
-import { calculateEarlySettlement } from '@/lib/early-settlement';
+
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
