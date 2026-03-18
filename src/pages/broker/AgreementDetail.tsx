@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { ArrowLeft, AlertTriangle, FileDown } from 'lucide-react';
+import SendReminderButton from '@/components/SendReminderButton';
 import { Button } from '@/components/ui/button';
 import { AgreementStatus, InstalmentStatus } from '@/types';
 import { generateAgreementPDF } from '@/lib/pdf-generator';
@@ -81,7 +82,14 @@ export default function AgreementDetail() {
                     <p className="text-sm font-medium">Instalment #{inst.number}</p>
                     <p className="text-xs text-muted-foreground">Due: {inst.dueDate}</p>
                   </div>
-                  <span className="font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                    <SendReminderButton
+                      clientName={agreement.clientName}
+                      instalmentNumber={inst.number}
+                      amount={formatCurrency(inst.amount)}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
