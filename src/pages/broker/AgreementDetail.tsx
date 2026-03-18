@@ -26,7 +26,7 @@ export default function AgreementDetail() {
   const financed = agreement.premiumAmount - downPayment;
   const paid = agreement.instalments.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
   const overdueInstalments = agreement.instalments.filter(i => i.status === 'overdue');
-  const settlement = agreement.status === 'active' ? calculateEarlySettlement(agreement) : null;
+  
 
   return (
     <div className="space-y-6">
