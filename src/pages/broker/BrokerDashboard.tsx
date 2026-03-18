@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { mockAgreements, mockClients, mockActivity } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { Users, FileText, Send, CheckCircle2, DollarSign, Activity, AlertTriangle, PlusCircle, UserPlus, TrendingUp } from 'lucide-react';
+import SendReminderButton from '@/components/SendReminderButton';
 import { Link, useNavigate } from 'react-router-dom';
 import { AgreementStatus } from '@/types';
 import { Button } from '@/components/ui/button';
