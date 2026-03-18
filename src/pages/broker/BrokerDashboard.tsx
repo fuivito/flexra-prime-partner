@@ -268,17 +268,24 @@ export default function BrokerDashboard() {
           <CardContent>
             <div className="space-y-2">
               {overdueInstalments.map((inst) => (
-                <Link
-                  key={inst.id}
-                  to={`/broker/agreements/${inst.agreementId}`}
-                  className="flex items-center justify-between rounded-lg p-3 hover:bg-destructive/10 transition-colors"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
-                    <p className="text-xs text-muted-foreground">Instalment #{inst.number} — Due {inst.dueDate}</p>
-                  </div>
-                  <span className="text-sm font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
-                </Link>
+                <div key={inst.id} className="flex items-center gap-2 rounded-lg p-3 hover:bg-destructive/10 transition-colors">
+                  <Link
+                    to={`/broker/agreements/${inst.agreementId}`}
+                    className="flex items-center justify-between flex-1 min-w-0"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
+                      <p className="text-xs text-muted-foreground">Instalment #{inst.number} — Due {inst.dueDate}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                  </Link>
+                  <SendReminderButton
+                    clientName={inst.clientName}
+                    instalmentNumber={inst.number}
+                    amount={formatCurrency(inst.amount)}
+                    compact
+                  />
+                </div>
               ))}
             </div>
           </CardContent>

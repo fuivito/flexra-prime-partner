@@ -82,7 +82,14 @@ export default function AgreementDetail() {
                     <p className="text-sm font-medium">Instalment #{inst.number}</p>
                     <p className="text-xs text-muted-foreground">Due: {inst.dueDate}</p>
                   </div>
-                  <span className="font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                    <SendReminderButton
+                      clientName={agreement.clientName}
+                      instalmentNumber={inst.number}
+                      amount={formatCurrency(inst.amount)}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
