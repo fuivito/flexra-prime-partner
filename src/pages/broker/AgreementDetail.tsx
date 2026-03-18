@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { ArrowLeft, AlertTriangle, FileDown } from 'lucide-react';
+import SendReminderButton from '@/components/SendReminderButton';
 import { Button } from '@/components/ui/button';
 import { AgreementStatus, InstalmentStatus } from '@/types';
 import { generateAgreementPDF } from '@/lib/pdf-generator';
