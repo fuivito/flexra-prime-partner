@@ -57,6 +57,15 @@ export default function BrokerDashboard() {
     a.instalments.filter(i => i.status === 'overdue').map(i => ({ ...i, clientName: a.clientName, agreementId: a.id }))
   );
 
+  const upcomingInstalments = mockAgreements
+    .flatMap(a =>
+      a.instalments
+        .filter(i => i.status === 'upcoming')
+        .map(i => ({ ...i, clientName: a.clientName, agreementId: a.id }))
+    )
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .slice(0, 6);
+
   const stats = [
     { label: 'CLIENTS', value: mockClients.length.toString(), icon: Users, href: '/broker/clients' },
     { label: 'PENDING', value: pendingDeals.toString(), icon: Send, href: '/broker/agreements?status=pending' },
