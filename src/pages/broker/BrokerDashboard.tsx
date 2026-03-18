@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockAgreements, mockClients, mockActivity } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
-import { Users, FileText, Send, CheckCircle2, DollarSign, Activity, AlertTriangle, PlusCircle, UserPlus, TrendingUp } from 'lucide-react';
+import { Users, FileText, Send, CheckCircle2, DollarSign, Activity, AlertTriangle, PlusCircle, UserPlus, TrendingUp, Clock, Bell } from 'lucide-react';
+import { format, parseISO, subDays } from 'date-fns';
 import SendReminderButton from '@/components/SendReminderButton';
 import { Link, useNavigate } from 'react-router-dom';
 import { AgreementStatus } from '@/types';
@@ -55,6 +56,15 @@ export default function BrokerDashboard() {
   const overdueInstalments = mockAgreements.flatMap(a =>
     a.instalments.filter(i => i.status === 'overdue').map(i => ({ ...i, clientName: a.clientName, agreementId: a.id }))
   );
+
+  const upcomingInstalments = mockAgreements
+    .flatMap(a =>
+      a.instalments
+        .filter(i => i.status === 'upcoming')
+        .map(i => ({ ...i, clientName: a.clientName, agreementId: a.id }))
+    )
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .slice(0, 6);
 
   const stats = [
     { label: 'CLIENTS', value: mockClients.length.toString(), icon: Users, href: '/broker/clients' },
@@ -292,7 +302,58 @@ export default function BrokerDashboard() {
         </Card>
       )}
 
-      {/* Activity Feed */}
+      {/* Upcoming Instalments */}
+      {upcomingInstalments.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="h-4 w-4 text-accent" /> Upcoming Instalments
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Automatic reminders are sent 3 days before each due date.</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {upcomingInstalments.map((inst) => {
+                const dueDate = parseISO(inst.dueDate);
+                const reminderDate = subDays(dueDate, 3);
+                const now = new Date();
+                const reminderSent = now >= reminderDate;
+
+                return (
+                  <Link
+                    key={inst.id}
+                    to={`/broker/agreements/${inst.agreementId}`}
+                    className="flex items-center justify-between rounded-lg p-3 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Instalment #{inst.number} — Due {format(dueDate, 'dd MMM yyyy')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">{formatCurrency(inst.amount)}</p>
+                        <div className="flex items-center gap-1 justify-end">
+                          <Bell className="h-3 w-3" />
+                          <span className="text-[10px]">
+                            {reminderSent ? (
+                              <span className="text-success">Reminder sent</span>
+                            ) : (
+                              <span className="text-muted-foreground">{format(reminderDate, 'dd MMM')}</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
