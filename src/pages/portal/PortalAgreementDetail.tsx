@@ -32,7 +32,7 @@ export default function PortalAgreementDetail() {
   const paidCount = agreement.instalments.filter(i => i.status === 'paid').length;
   const progressPercent = (paidCount / agreement.instalments.length) * 100;
   const financedAmount = agreement.premiumAmount * (1 - agreement.downPaymentPercent / 100);
-  const settlement = agreement.status === 'active' ? calculateEarlySettlement(agreement) : null;
+  
 
   return (
     <div className="space-y-6">
