@@ -2,25 +2,27 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Mail, Phone, Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface SendReminderButtonProps {
   clientName: string;
   instalmentNumber: number;
   amount: string;
-  /** Compact mode for inline/list usage */
   compact?: boolean;
 }
 
-const channels = [
-  { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
-  { id: 'email', label: 'Email', icon: Mail },
-  { id: 'sms', label: 'SMS', icon: Phone },
-] as const;
-
 export default function SendReminderButton({ clientName, instalmentNumber, amount, compact = false }: SendReminderButtonProps) {
+  const { t } = useLocale();
+
+  const channels = [
+    { id: 'whatsapp', label: t.components.sendReminder.whatsapp, icon: MessageSquare },
+    { id: 'email', label: t.components.sendReminder.emailLabel, icon: Mail },
+    { id: 'sms', label: t.components.sendReminder.sms, icon: Phone },
+  ] as const;
+
   const handleSend = (channel: string) => {
-    toast.success(`Reminder sent via ${channel}`, {
-      description: `Payment reminder for instalment #${instalmentNumber} (${amount}) sent to ${clientName}.`,
+    toast.success(t.components.sendReminder.reminderSent(channel), {
+      description: t.components.sendReminder.reminderDesc(instalmentNumber, amount, clientName),
     });
   };
 
@@ -28,12 +30,12 @@ export default function SendReminderButton({ clientName, instalmentNumber, amoun
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {compact ? (
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent" title="Send reminder">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent" title={t.components.sendReminder.sendReminder}>
             <Bell className="h-4 w-4" />
           </Button>
         ) : (
           <Button variant="outline" size="sm" className="gap-2 text-xs">
-            <Bell className="h-3.5 w-3.5" /> Send Reminder
+            <Bell className="h-3.5 w-3.5" /> {t.components.sendReminder.sendReminder}
           </Button>
         )}
       </DropdownMenuTrigger>

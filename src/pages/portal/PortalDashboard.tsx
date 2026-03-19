@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { FileText, DollarSign, Calendar, TrendingUp, AlertTriangle, ArrowRight, Shield } from 'lucide-react';
 import { Instalment, InstalmentStatus } from '@/types';
@@ -11,6 +10,8 @@ import PayNowDialog from '@/components/PayNowDialog';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
+import { useLocale } from '@/i18n/LocaleContext';
+import { useLocalizedMockData } from '@/i18n/mock-data-localized';
 
 const instStatusColors: Record<InstalmentStatus, string> = {
   paid: 'bg-success/10 text-success border-success/20',
@@ -20,7 +21,11 @@ const instStatusColors: Record<InstalmentStatus, string> = {
 
 export default function PortalDashboard() {
   const [payDialogInst, setPayDialogInst] = useState<Instalment | null>(null);
-  const myAgreements = mockAgreements.filter(a => a.policyholderUserId === 'ph-1');
+  const { t, currencyLocale, currency, dateFnsLocale } = useLocale();
+  const { agreements } = useLocalizedMockData();
+  const fmt = (amount: number) => formatCurrency(amount, currencyLocale, currency);
+
+  const myAgreements = agreements.filter(a => a.policyholderUserId === 'ph-1');
   const activeAgreements = myAgreements.filter(a => a.status === 'active');
 
   const totalFinanced = activeAgreements.reduce((sum, a) => {
@@ -37,7 +42,6 @@ export default function PortalDashboard() {
   const overdueCount = activeAgreements.reduce((sum, a) =>
     sum + a.instalments.filter(i => i.status === 'overdue').length, 0);
 
-  // Next 3 payments: overdue first, then upcoming
   const upcomingPayments = activeAgreements
     .flatMap(a => a.instalments.filter(i => i.status === 'upcoming' || i.status === 'overdue').map(i => ({ ...i, insurerName: a.insurerName })))
     .sort((a, b) => {
@@ -49,23 +53,20 @@ export default function PortalDashboard() {
 
   const allInstalments = activeAgreements.flatMap(a => a.instalments);
 
-  // Donut data
   const paidTotal = allInstalments.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
   const upcomingTotal = allInstalments.filter(i => i.status === 'upcoming').reduce((s, i) => s + i.amount, 0);
   const overdueTotal = allInstalments.filter(i => i.status === 'overdue').reduce((s, i) => s + i.amount, 0);
   const donutData = [
-    { name: 'Paid', value: paidTotal, color: 'hsl(152, 69%, 41%)' },
-    { name: 'Upcoming', value: upcomingTotal, color: 'hsl(174, 76%, 39%)' },
-    { name: 'Overdue', value: overdueTotal, color: 'hsl(0, 84%, 60%)' },
+    { name: t.common.paid, value: paidTotal, color: 'hsl(152, 69%, 41%)' },
+    { name: t.common.upcoming, value: upcomingTotal, color: 'hsl(174, 76%, 39%)' },
+    { name: t.common.overdue, value: overdueTotal, color: 'hsl(0, 84%, 60%)' },
   ].filter(d => d.value > 0);
-
-  // Per-agreement comparison bar chart
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-        <p className="text-muted-foreground text-sm mt-1">Here's your financing overview</p>
+        <h1 className="text-2xl font-bold text-foreground">{t.portal.dashboard.welcomeBack}</h1>
+        <p className="text-muted-foreground text-sm mt-1">{t.portal.dashboard.subtitle}</p>
       </div>
 
       {/* Stat cards */}
@@ -75,7 +76,7 @@ export default function PortalDashboard() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Active Agreements</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.dashboard.activeAgreements}</p>
                   <p className="text-2xl md:text-3xl font-bold mt-1">{activeAgreements.length}</p>
                 </div>
                 <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
@@ -90,8 +91,8 @@ export default function PortalDashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Financed</p>
-                <p className="text-2xl md:text-3xl font-bold mt-1">{formatCurrency(totalFinanced)}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.dashboard.totalFinanced}</p>
+                <p className="text-2xl md:text-3xl font-bold mt-1">{fmt(totalFinanced)}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-accent" />
@@ -104,8 +105,8 @@ export default function PortalDashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Remaining</p>
-                <p className="text-2xl md:text-3xl font-bold mt-1">{formatCurrency(remaining)}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.dashboard.remainingLabel}</p>
+                <p className="text-2xl md:text-3xl font-bold mt-1">{fmt(remaining)}</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-accent" />
@@ -120,7 +121,7 @@ export default function PortalDashboard() {
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-destructive uppercase tracking-wider">Overdue</p>
+                    <p className="text-xs text-destructive uppercase tracking-wider">{t.portal.dashboard.overdueLabel}</p>
                     <p className="text-2xl md:text-3xl font-bold mt-1 text-destructive">{overdueCount}</p>
                   </div>
                   <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center">
@@ -135,8 +136,8 @@ export default function PortalDashboard() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p>
-                  <p className="text-lg font-bold mt-1 text-success">All on track</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.dashboard.statusLabel}</p>
+                  <p className="text-lg font-bold mt-1 text-success">{t.portal.dashboard.allOnTrack}</p>
                 </div>
                 <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
                   <Calendar className="h-5 w-5 text-success" />
@@ -150,7 +151,7 @@ export default function PortalDashboard() {
       {/* Payment Breakdown Donut */}
       <Card className="glass-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Payment Breakdown</CardTitle>
+          <CardTitle className="text-base">{t.portal.dashboard.paymentBreakdown}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[180px] relative">
@@ -163,14 +164,14 @@ export default function PortalDashboard() {
                 </Pie>
                 <Tooltip
                   contentStyle={{ background: 'hsl(207, 38%, 16%)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: 12 }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number) => fmt(value)}
                 />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <p className="text-xl font-bold">{Math.round(progressPercent)}%</p>
-                <p className="text-xs text-muted-foreground">paid</p>
+                <p className="text-xs text-muted-foreground">{t.portal.dashboard.paidLabel}</p>
               </div>
             </div>
           </div>
@@ -189,20 +190,20 @@ export default function PortalDashboard() {
       <Card className="glass-card">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium">Overall Progress</span>
-            <span className="text-sm text-muted-foreground">{formatCurrency(totalPaid)} of {formatCurrency(totalFinanced)}</span>
+            <span className="text-sm font-medium">{t.portal.dashboard.overallProgress}</span>
+            <span className="text-sm text-muted-foreground">{t.portal.dashboard.ofTotal(fmt(totalPaid), fmt(totalFinanced))}</span>
           </div>
           <Progress value={progressPercent} className="h-2.5" />
-          <p className="text-xs text-muted-foreground mt-2 text-right">{Math.round(progressPercent)}% complete</p>
+          <p className="text-xs text-muted-foreground mt-2 text-right">{Math.round(progressPercent)}% {t.portal.dashboard.complete}</p>
         </CardContent>
       </Card>
 
       {/* Upcoming payments */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Next Payments</h2>
+          <h2 className="text-lg font-semibold">{t.portal.dashboard.nextPayments}</h2>
           <Link to="/portal/payments" className="text-sm text-accent hover:underline flex items-center gap-1">
-            View all <ArrowRight className="h-3 w-3" />
+            {t.portal.dashboard.viewAll} <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
         {upcomingPayments.length > 0 ? (
@@ -212,25 +213,25 @@ export default function PortalDashboard() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider">Instalment #{p.number}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.dashboard.instalmentNumber(p.number)}</p>
                       <p className="font-semibold text-sm mt-1">{p.insurerName}</p>
                     </div>
                     <Badge variant="outline" className={instStatusColors[p.status]}>{p.status}</Badge>
                   </div>
                   <div className="mt-4 flex items-end justify-between">
-                    <p className="text-2xl font-bold">{formatCurrency(p.amount)}</p>
+                    <p className="text-2xl font-bold">{fmt(p.amount)}</p>
                     {p.status === 'overdue' ? (
                       <Button
                         size="sm"
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         onClick={(e) => { e.preventDefault(); setPayDialogInst(p); }}
                       >
-                        Pay Now
+                        {t.portal.dashboard.payNow}
                       </Button>
                     ) : (
                       <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Due</p>
-                        <p className="text-sm font-medium">{format(parseISO(p.dueDate), 'dd MMM yyyy')}</p>
+                        <p className="text-xs text-muted-foreground">{t.portal.dashboard.due}</p>
+                        <p className="text-sm font-medium">{format(parseISO(p.dueDate), 'dd MMM yyyy', { locale: dateFnsLocale })}</p>
                       </div>
                     )}
                   </div>
@@ -239,7 +240,7 @@ export default function PortalDashboard() {
             ))}
           </div>
         ) : (
-          <Card className="glass-card"><CardContent className="p-8 text-center text-muted-foreground text-sm">No upcoming payments.</CardContent></Card>
+          <Card className="glass-card"><CardContent className="p-8 text-center text-muted-foreground text-sm">{t.portal.dashboard.noUpcoming}</CardContent></Card>
         )}
       </div>
 
@@ -249,7 +250,7 @@ export default function PortalDashboard() {
           onOpenChange={(open) => { if (!open) setPayDialogInst(null); }}
           amount={payDialogInst.amount}
           instalmentNumber={payDialogInst.number}
-          dueDate={format(parseISO(payDialogInst.dueDate), 'dd MMM yyyy')}
+          dueDate={format(parseISO(payDialogInst.dueDate), 'dd MMM yyyy', { locale: dateFnsLocale })}
         />
       )}
     </div>

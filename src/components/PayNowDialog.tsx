@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
 import { Building2, CreditCard, CheckCircle2, Loader2, Landmark, Wallet, Plus } from 'lucide-react';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface PayNowDialogProps {
   open: boolean;
@@ -38,6 +39,9 @@ const defaultPaymentMethods: PaymentMethod[] = [
 
 export default function PayNowDialog({ open, onOpenChange, amount, instalmentNumber, dueDate }: PayNowDialogProps) {
   const { toast } = useToast();
+  const { t, currencyLocale, currency } = useLocale();
+  const fmt = (a: number) => formatCurrency(a, currencyLocale, currency);
+
   const [processing, setProcessing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [methods, setMethods] = useState<PaymentMethod[]>(defaultPaymentMethods);
@@ -66,8 +70,8 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
       setProcessing(false);
       setConfirmed(true);
       toast({
-        title: 'Payment submitted',
-        description: `${formatCurrency(amount)} for instalment #${instalmentNumber} is being processed.`,
+        title: t.components.payNow.paymentSubmitted,
+        description: t.components.payNow.paymentSubmittedDesc(fmt(amount), instalmentNumber),
       });
       setTimeout(() => {
         onOpenChange(false);
@@ -93,18 +97,18 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
         {confirmed ? (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
             <CheckCircle2 className="h-12 w-12 text-success" />
-            <p className="text-lg font-semibold">Payment Submitted</p>
-            <p className="text-sm text-muted-foreground">Processing {formatCurrency(amount)}</p>
+            <p className="text-lg font-semibold">{t.components.payNow.paymentSubmittedTitle}</p>
+            <p className="text-sm text-muted-foreground">{t.components.payNow.processingAmount(fmt(amount))}</p>
           </div>
         ) : (
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-destructive" />
-                Confirm Payment
+                {t.components.payNow.confirmPayment}
               </DialogTitle>
               <DialogDescription>
-                Review your bank details and confirm payment for the overdue instalment.
+                {t.components.payNow.reviewDesc}
               </DialogDescription>
             </DialogHeader>
 
@@ -112,12 +116,12 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
               {/* Amount summary */}
               <div className="flex items-center justify-between p-4 rounded-lg bg-destructive/5 border border-destructive/20">
                 <div>
-                  <p className="text-xs text-muted-foreground">Instalment #{instalmentNumber}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Due: {dueDate}</p>
+                  <p className="text-xs text-muted-foreground">{t.components.payNow.instalmentNumber(instalmentNumber)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.components.payNow.dueLabel} {dueDate}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold">{formatCurrency(amount)}</p>
-                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px]">overdue</Badge>
+                  <p className="text-2xl font-bold">{fmt(amount)}</p>
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px]">{t.common.overdue}</Badge>
                 </div>
               </div>
 
@@ -125,7 +129,7 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm font-medium">Payment Method</p>
+                  <p className="text-sm font-medium">{t.components.payNow.paymentMethod}</p>
                 </div>
                 {methods.map((method) => {
                   const Icon = method.icon;
@@ -166,22 +170,22 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
                     <div className="h-8 w-8 rounded-md flex items-center justify-center bg-muted">
                       <Plus className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground">Add new bank account</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t.components.payNow.addNewBank}</p>
                   </button>
                 ) : (
                   <div className="space-y-3 p-3 rounded-lg border border-accent bg-accent/5">
                     <p className="text-sm font-medium flex items-center gap-2">
                       <Landmark className="h-4 w-4 text-accent" />
-                      New Bank Account
+                      {t.components.payNow.newBankAccount}
                     </p>
                     <div className="space-y-2">
-                      <Input placeholder="Account holder name" value={newBank.name} onChange={e => setNewBank({...newBank, name: e.target.value})} className="bg-background/50 h-9 text-sm" />
-                      <Input placeholder="Sort code (e.g. 20-45-67)" value={newBank.sortCode} onChange={e => setNewBank({...newBank, sortCode: e.target.value})} className="bg-background/50 h-9 text-sm" />
-                      <Input placeholder="Account number" value={newBank.accountNumber} onChange={e => setNewBank({...newBank, accountNumber: e.target.value})} className="bg-background/50 h-9 text-sm" />
+                      <Input placeholder={t.components.payNow.accountHolder} value={newBank.name} onChange={e => setNewBank({...newBank, name: e.target.value})} className="bg-background/50 h-9 text-sm" />
+                      <Input placeholder={t.components.payNow.sortCodePlaceholder} value={newBank.sortCode} onChange={e => setNewBank({...newBank, sortCode: e.target.value})} className="bg-background/50 h-9 text-sm" />
+                      <Input placeholder={t.components.payNow.accountNumberPlaceholder} value={newBank.accountNumber} onChange={e => setNewBank({...newBank, accountNumber: e.target.value})} className="bg-background/50 h-9 text-sm" />
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => { setShowNewBank(false); setNewBank({ name: '', sortCode: '', accountNumber: '' }); }}>
-                        Cancel
+                        {t.components.payNow.cancel}
                       </Button>
                       <Button
                         type="button"
@@ -190,7 +194,7 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
                         disabled={!newBank.name || !newBank.sortCode || !newBank.accountNumber}
                         onClick={handleAddBank}
                       >
-                        Add & Select
+                        {t.components.payNow.addAndSelect}
                       </Button>
                     </div>
                   </div>
@@ -200,7 +204,7 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
 
             <DialogFooter className="flex gap-2 sm:gap-2">
               <Button variant="outline" onClick={() => handleClose(false)} disabled={processing}>
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -210,10 +214,10 @@ export default function PayNowDialog({ open, onOpenChange, amount, instalmentNum
                 {processing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing…
+                    {t.components.payNow.processing}
                   </>
                 ) : (
-                  `Pay ${formatCurrency(amount)}`
+                  t.components.payNow.payAmount(fmt(amount))
                 )}
               </Button>
             </DialogFooter>

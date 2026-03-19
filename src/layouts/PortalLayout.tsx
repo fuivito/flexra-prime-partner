@@ -14,16 +14,19 @@ import {
 import { NavLink } from '@/components/NavLink';
 import { LayoutDashboard, CreditCard, UserCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const navItems = [
-  { title: 'Dashboard', url: '/portal/dashboard', icon: LayoutDashboard },
-  { title: 'Payments', url: '/portal/payments', icon: CreditCard },
-  { title: 'Profile', url: '/portal/profile', icon: UserCircle },
-];
+import LanguageToggle from '@/components/LanguageToggle';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export default function PortalLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { t } = useLocale();
+
+  const navItems = [
+    { title: t.nav.dashboard, url: '/portal/dashboard', icon: LayoutDashboard },
+    { title: t.nav.payments, url: '/portal/payments', icon: CreditCard },
+    { title: t.nav.profile, url: '/portal/profile', icon: UserCircle },
+  ];
 
   return (
     <SidebarProvider>
@@ -74,7 +77,8 @@ export default function PortalLayout() {
             <div className="flex-1 min-w-0">
               <span className="text-sm text-muted-foreground truncate block">{user?.company || 'My Portal'}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <LanguageToggle />
               <span className="text-sm text-muted-foreground hidden sm:block">{user?.name}</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground flex-shrink-0">
                 {user?.name?.charAt(0)}

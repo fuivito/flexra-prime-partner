@@ -2,8 +2,23 @@ import jsPDF from 'jspdf';
 import { Agreement } from '@/types';
 import { formatCurrency } from '@/lib/calculator';
 import { format, parseISO } from 'date-fns';
+import { en, Translations } from '@/i18n/translations';
+import { enUS, Locale as DateFnsLocale } from 'date-fns/locale';
 
-export function generateAgreementPDF(agreement: Agreement) {
+interface PdfOptions {
+  t?: Translations;
+  dateFnsLocale?: DateFnsLocale;
+  currencyLocale?: string;
+  currency?: string;
+}
+
+export function generateAgreementPDF(agreement: Agreement, opts: PdfOptions = {}) {
+  const t = opts.t ?? en;
+  const dfLocale = opts.dateFnsLocale ?? enUS;
+  const cLocale = opts.currencyLocale ?? 'en-US';
+  const cur = opts.currency ?? 'USD';
+  const fmt = (amount: number) => formatCurrency(amount, cLocale, cur);
+
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
@@ -31,9 +46,9 @@ export function generateAgreementPDF(agreement: Agreement) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...gray);
-  doc.text('Flexra Finance Ltd', pageWidth - margin, y - 8, { align: 'right' });
-  doc.text('1 Finsbury Avenue, London EC2M 2PF', pageWidth - margin, y - 3, { align: 'right' });
-  doc.text('support@flexra.co.uk | +44 (0) 20 7123 4567', pageWidth - margin, y + 2, { align: 'right' });
+  doc.text(t.pdf.companyName, pageWidth - margin, y - 8, { align: 'right' });
+  doc.text(t.pdf.address, pageWidth - margin, y - 3, { align: 'right' });
+  doc.text(t.pdf.contact, pageWidth - margin, y + 2, { align: 'right' });
 
   y += 15;
 
@@ -41,14 +56,14 @@ export function generateAgreementPDF(agreement: Agreement) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(...navy);
-  doc.text('Credit Agreement', margin, y);
+  doc.text(t.pdf.title, margin, y);
   y += 8;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...gray);
-  doc.text(`Agreement Reference: ${agreement.id.toUpperCase()}`, margin, y);
-  doc.text(`Date: ${format(parseISO(agreement.createdAt), 'dd MMMM yyyy')}`, pageWidth - margin, y, { align: 'right' });
+  doc.text(`${t.pdf.agreementRef} ${agreement.id.toUpperCase()}`, margin, y);
+  doc.text(`${t.pdf.date} ${format(parseISO(agreement.createdAt), 'dd MMMM yyyy', { locale: dfLocale })}`, pageWidth - margin, y, { align: 'right' });
   y += 12;
 
   // Divider
@@ -77,14 +92,14 @@ export function generateAgreementPDF(agreement: Agreement) {
     y += 5;
   };
 
-  drawSection('Policyholder', [
-    ['Company:', agreement.clientName],
-    ['Agreement Status:', agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1)],
+  drawSection(t.pdf.policyholder, [
+    [t.pdf.companyLabel, agreement.clientName],
+    [t.pdf.agreementStatus, agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1)],
   ]);
 
-  drawSection('Insurer', [
-    ['Name:', agreement.insurerName],
-    ['Policy Period:', `${format(parseISO(agreement.policyPeriodStart), 'dd MMM yyyy')} — ${format(parseISO(agreement.policyPeriodEnd), 'dd MMM yyyy')}`],
+  drawSection(t.pdf.insurer, [
+    [t.pdf.nameLabel, agreement.insurerName],
+    [t.pdf.policyPeriod, `${format(parseISO(agreement.policyPeriodStart), 'dd MMM yyyy', { locale: dfLocale })} — ${format(parseISO(agreement.policyPeriodEnd), 'dd MMM yyyy', { locale: dfLocale })}`],
   ]);
 
   // === Financial Summary ===
@@ -97,15 +112,15 @@ export function generateAgreementPDF(agreement: Agreement) {
     ? agreement.instalments[0].amount
     : financed / agreement.instalmentCount;
 
-  drawSection('Financial Summary', [
-    ['Total Premium:', formatCurrency(agreement.premiumAmount)],
-    ['Down Payment:', `${agreement.downPaymentPercent}% (${formatCurrency(downPayment)})`],
-    ['Financed Amount:', formatCurrency(financed)],
-    ['APR:', `${apr}%`],
-    ['Monthly Payment:', formatCurrency(monthlyPayment)],
-    ['Term:', `${agreement.instalmentCount} months`],
-    ['Total Interest:', formatCurrency(totalInterest)],
-    ['Total Payable:', formatCurrency(totalCustomerPays)],
+  drawSection(t.pdf.financialSummary, [
+    [t.pdf.totalPremium, fmt(agreement.premiumAmount)],
+    [t.pdf.downPayment, `${agreement.downPaymentPercent}% (${fmt(downPayment)})`],
+    [t.pdf.financedAmount, fmt(financed)],
+    [t.pdf.aprLabel, `${apr}%`],
+    [t.pdf.monthlyPayment, fmt(monthlyPayment)],
+    [t.pdf.termLabel, t.pdf.termMonths(agreement.instalmentCount)],
+    [t.pdf.totalInterest, fmt(totalInterest)],
+    [t.pdf.totalPayable, fmt(totalCustomerPays)],
   ]);
 
   // === Instalment Schedule ===
@@ -113,7 +128,7 @@ export function generateAgreementPDF(agreement: Agreement) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...navy);
-    doc.text('Instalment Schedule', margin, y);
+    doc.text(t.pdf.instalmentSchedule, margin, y);
     y += 8;
 
     // Table header
@@ -122,10 +137,10 @@ export function generateAgreementPDF(agreement: Agreement) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(...gray);
-    doc.text('#', margin + 3, y);
-    doc.text('Due Date', margin + 20, y);
-    doc.text('Amount', margin + 80, y);
-    doc.text('Status', margin + 120, y);
+    doc.text(t.pdf.hashSymbol, margin + 3, y);
+    doc.text(t.pdf.dueDate, margin + 20, y);
+    doc.text(t.pdf.amount, margin + 80, y);
+    doc.text(t.pdf.statusLabel, margin + 120, y);
     y += 8;
 
     doc.setFont('helvetica', 'normal');
@@ -138,8 +153,8 @@ export function generateAgreementPDF(agreement: Agreement) {
       }
       doc.setTextColor(...black);
       doc.text(inst.number.toString(), margin + 3, y);
-      doc.text(format(parseISO(inst.dueDate), 'dd MMM yyyy'), margin + 20, y);
-      doc.text(formatCurrency(inst.amount), margin + 80, y);
+      doc.text(format(parseISO(inst.dueDate), 'dd MMM yyyy', { locale: dfLocale }), margin + 20, y);
+      doc.text(fmt(inst.amount), margin + 80, y);
 
       const statusColor: [number, number, number] = inst.status === 'paid' ? [20, 158, 133] : inst.status === 'overdue' ? [220, 38, 38] : gray;
       doc.setTextColor(...statusColor);
@@ -160,15 +175,9 @@ export function generateAgreementPDF(agreement: Agreement) {
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(7);
   doc.setTextColor(...gray);
-  doc.text(
-    'This document is for informational purposes. The credit agreement is subject to Flexra Finance Ltd terms and conditions.',
-    margin, y, { maxWidth: contentWidth }
-  );
+  doc.text(t.pdf.disclaimer, margin, y, { maxWidth: contentWidth });
   y += 10;
-  doc.text(
-    'Flexra Finance Ltd is authorised and regulated by the Financial Conduct Authority (FCA). Registered in England & Wales.',
-    margin, y, { maxWidth: contentWidth }
-  );
+  doc.text(t.pdf.regulatory, margin, y, { maxWidth: contentWidth });
 
   // Bottom bar
   const pageHeight = doc.internal.pageSize.getHeight();

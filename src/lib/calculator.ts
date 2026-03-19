@@ -21,10 +21,10 @@ export function calculateInstalments(
   }));
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, currencyLocale = 'en-US', currency = 'USD'): string {
+  return new Intl.NumberFormat(currencyLocale, {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);

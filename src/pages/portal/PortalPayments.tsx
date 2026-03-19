@@ -1,9 +1,8 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { mockAgreements } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
 import { Instalment, InstalmentStatus } from '@/types';
@@ -11,6 +10,8 @@ import { Check, Sparkles, Calendar, DollarSign, ChevronDown, ChevronUp, Pencil, 
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import PayNowDialog from '@/components/PayNowDialog';
+import { useLocale } from '@/i18n/LocaleContext';
+import { useLocalizedMockData } from '@/i18n/mock-data-localized';
 
 const instStatusColors: Record<InstalmentStatus, string> = {
   paid: 'bg-success/10 text-success border-success/20',
@@ -18,34 +19,37 @@ const instStatusColors: Record<InstalmentStatus, string> = {
   overdue: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-const mockCashflowMonths = [
-  { month: '2026-03', score: 0.9, label: 'Mar' },
-  { month: '2026-04', score: 0.5, label: 'Apr' },
-  { month: '2026-05', score: 0.7, label: 'May' },
-  { month: '2026-06', score: 0.4, label: 'Jun' },
-  { month: '2026-07', score: 0.8, label: 'Jul' },
-  { month: '2026-08', score: 0.6, label: 'Aug' },
-  { month: '2026-09', score: 0.9, label: 'Sep' },
-  { month: '2026-10', score: 0.3, label: 'Oct' },
-  { month: '2026-11', score: 0.7, label: 'Nov' },
-  { month: '2026-12', score: 0.85, label: 'Dec' },
-  { month: '2027-01', score: 0.6, label: 'Jan' },
-];
-
 export default function PortalPayments() {
   const { toast } = useToast();
-  const myAgreements = mockAgreements.filter(a => a.policyholderUserId === 'ph-1' && a.status === 'active');
+  const { t, currencyLocale, currency, dateFnsLocale } = useLocale();
+  const { agreements } = useLocalizedMockData();
+  const fmt = (amount: number) => formatCurrency(amount, currencyLocale, currency);
+
+  const myAgreements = agreements.filter(a => a.policyholderUserId === 'ph-1' && a.status === 'active');
   const agreement = myAgreements[0];
   const [instalments, setInstalments] = useState<Instalment[]>(agreement?.instalments || []);
   const [editMode, setEditMode] = useState(false);
-  // editAmounts holds the live amounts for ALL upcoming instalments during edit
   const [editAmounts, setEditAmounts] = useState<Record<string, number>>({});
   const [showHistory, setShowHistory] = useState(false);
   const [payDialogInst, setPayDialogInst] = useState<Instalment | null>(null);
   const [smartApplied, setSmartApplied] = useState(false);
-  const _ = smartApplied; // keep state for future use
+  const _ = smartApplied;
 
-  if (!agreement) return <div className="text-muted-foreground">No active agreements.</div>;
+  if (!agreement) return <div className="text-muted-foreground">{t.portal.payments.noActive}</div>;
+
+  const mockCashflowMonths = [
+    { month: '2026-03', score: 0.9, label: t.months.short[2] },
+    { month: '2026-04', score: 0.5, label: t.months.short[3] },
+    { month: '2026-05', score: 0.7, label: t.months.short[4] },
+    { month: '2026-06', score: 0.4, label: t.months.short[5] },
+    { month: '2026-07', score: 0.8, label: t.months.short[6] },
+    { month: '2026-08', score: 0.6, label: t.months.short[7] },
+    { month: '2026-09', score: 0.9, label: t.months.short[8] },
+    { month: '2026-10', score: 0.3, label: t.months.short[9] },
+    { month: '2026-11', score: 0.7, label: t.months.short[10] },
+    { month: '2026-12', score: 0.85, label: t.months.short[11] },
+    { month: '2027-01', score: 0.6, label: t.months.short[0] },
+  ];
 
   const upcomingInstalments = instalments.filter(i => i.status === 'upcoming');
   const paidInstalments = instalments.filter(i => i.status === 'paid');
@@ -56,11 +60,9 @@ export default function PortalPayments() {
   const progressPercent = (totalPaid / (totalPaid + totalRemaining)) * 100;
 
   const minPerInst = 200;
-  // Cap each instalment at 2× the equal share so sliders use the full track range
   const equalShare = upcomingInstalments.length > 0 ? totalUpcoming / upcomingInstalments.length : 0;
   const sliderMax = Math.round(equalShare * 2);
 
-  // When entering edit mode, snapshot current amounts
   const enterEditMode = () => {
     const snapshot: Record<string, number> = {};
     upcomingInstalments.forEach(i => { snapshot[i.id] = i.amount; });
@@ -68,16 +70,14 @@ export default function PortalPayments() {
     setEditMode(true);
   };
 
-  // Live proportional rebalance: when one slider moves, redistribute the difference across others
   const handleSliderChange = (changedId: string, val: number[]) => {
     const newVal = val[0];
     const oldVal = editAmounts[changedId] ?? 0;
-    const diff = oldVal - newVal; // positive means freed up money
+    const diff = oldVal - newVal;
 
     const otherIds = upcomingInstalments.filter(i => i.id !== changedId).map(i => i.id);
     if (otherIds.length === 0) return;
 
-    // Distribute diff proportionally among others
     const otherTotal = otherIds.reduce((s, id) => s + (editAmounts[id] ?? 0), 0);
 
     const newAmounts = { ...editAmounts, [changedId]: newVal };
@@ -105,7 +105,7 @@ export default function PortalPayments() {
     }));
     setEditAmounts({});
     setEditMode(false);
-    toast({ title: 'Instalments adjusted', description: 'All payments rebalanced.' });
+    toast({ title: t.portal.payments.instalmentsAdjusted, description: t.portal.payments.allRebalanced });
   };
 
   const handleCancelEdit = () => {
@@ -130,7 +130,6 @@ export default function PortalPayments() {
 
     setInstalments(newInstalments);
 
-    // Also update edit amounts if in edit mode
     if (editMode) {
       const snapshot: Record<string, number> = {};
       newInstalments.filter(i => i.status === 'upcoming').forEach(i => { snapshot[i.id] = i.amount; });
@@ -138,12 +137,11 @@ export default function PortalPayments() {
     }
 
     toast({
-      title: '✨ Smart Instalments Applied',
-      description: 'Payments have been optimised based on your predicted cash flow.',
+      title: t.portal.payments.smartAppliedTitle,
+      description: t.portal.payments.smartAppliedDesc,
     });
   };
 
-  // Display amount: use editAmounts when in edit mode, otherwise instalment amount
   const getDisplayAmount = (inst: Instalment) => {
     if (editMode && editAmounts[inst.id] !== undefined) return editAmounts[inst.id];
     return inst.amount;
@@ -151,9 +149,8 @@ export default function PortalPayments() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Payments</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t.portal.payments.title}</h1>
         <p className="text-sm text-muted-foreground mt-1">{agreement.insurerName} — {agreement.clientName}</p>
       </div>
 
@@ -165,8 +162,8 @@ export default function PortalPayments() {
               <Check className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Paid</p>
-              <p className="text-xl font-bold">{formatCurrency(totalPaid)}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.payments.paidLabel}</p>
+              <p className="text-xl font-bold">{fmt(totalPaid)}</p>
             </div>
           </CardContent>
         </Card>
@@ -176,8 +173,8 @@ export default function PortalPayments() {
               <DollarSign className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Remaining</p>
-              <p className="text-xl font-bold">{formatCurrency(totalRemaining)}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.payments.remainingLabel}</p>
+              <p className="text-xl font-bold">{fmt(totalRemaining)}</p>
             </div>
           </CardContent>
         </Card>
@@ -187,9 +184,9 @@ export default function PortalPayments() {
               <Calendar className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Next Due</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.portal.payments.nextDue}</p>
               <p className="text-xl font-bold">
-                {upcomingInstalments[0] ? format(parseISO(upcomingInstalments[0].dueDate), 'dd MMM') : '—'}
+                {upcomingInstalments[0] ? format(parseISO(upcomingInstalments[0].dueDate), 'dd MMM', { locale: dateFnsLocale }) : '—'}
               </p>
             </div>
           </CardContent>
@@ -200,8 +197,8 @@ export default function PortalPayments() {
       <Card className="glass-card">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Payment Progress</span>
-            <span className="text-sm text-muted-foreground">{paidInstalments.length} of {instalments.length} instalments</span>
+            <span className="text-sm font-medium">{t.portal.payments.paymentProgress}</span>
+            <span className="text-sm text-muted-foreground">{t.portal.payments.instalmentProgress(paidInstalments.length, instalments.length)}</span>
           </div>
           <Progress value={progressPercent} className="h-2" />
         </CardContent>
@@ -216,10 +213,10 @@ export default function PortalPayments() {
               <Sparkles className="h-5 w-5 text-accent" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-sm">Smart Instalments</h3>
+              <h3 className="font-semibold text-sm">{t.portal.payments.smartInstalments}</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                AI analyses your company's predicted cash flow and redistributes payments to align with your strongest months.
-                {smartApplied && <span className="text-success ml-1">✓ Last applied</span>}
+                {t.portal.payments.smartDesc}
+                {smartApplied && <span className="text-success ml-1">{t.portal.payments.lastApplied}</span>}
               </p>
               <div className="flex items-end gap-1 mt-3 h-12">
                 {mockCashflowMonths.slice(0, 10).map(cf => (
@@ -242,7 +239,7 @@ export default function PortalPayments() {
               onClick={handleSmartInstalments}
               className="bg-accent text-accent-foreground hover:bg-accent/90 flex-shrink-0"
             >
-              Optimise
+              {t.portal.payments.optimise}
             </Button>
           </div>
         </CardContent>
@@ -250,22 +247,21 @@ export default function PortalPayments() {
 
       {/* Upcoming Instalments */}
       <div className="max-w-3xl mx-auto">
-        {/* Edit controls right above the schedule */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Upcoming Schedule</h2>
+          <h2 className="text-lg font-semibold">{t.portal.payments.upcomingSchedule}</h2>
           <div className="flex gap-2">
             {editMode ? (
               <>
                 <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-                  <X className="h-4 w-4 mr-1" /> Cancel
+                  <X className="h-4 w-4 mr-1" /> {t.common.cancel}
                 </Button>
                 <Button size="sm" onClick={handleApplyAll} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                  Apply Changes
+                  {t.portal.payments.applyChanges}
                 </Button>
               </>
             ) : (
               <Button size="sm" variant="outline" onClick={enterEditMode} className="gap-1.5">
-                <Pencil className="h-3.5 w-3.5" /> Edit Amounts
+                <Pencil className="h-3.5 w-3.5" /> {t.portal.payments.editAmounts}
               </Button>
             )}
           </div>
@@ -290,13 +286,13 @@ export default function PortalPayments() {
                         #{inst.number}
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{format(parseISO(inst.dueDate), 'dd MMMM yyyy')}</p>
-                        <p className="text-xs text-muted-foreground">Instalment #{inst.number}</p>
+                        <p className="font-medium text-sm">{format(parseISO(inst.dueDate), 'dd MMMM yyyy', { locale: dateFnsLocale })}</p>
+                        <p className="text-xs text-muted-foreground">{t.portal.payments.instalmentNumber(inst.number)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
                       <p className={`text-base sm:text-lg font-bold ${editMode && editAmounts[inst.id] !== undefined && editAmounts[inst.id] !== inst.amount ? 'text-accent' : ''}`}>
-                        {formatCurrency(displayAmt)}
+                        {fmt(displayAmt)}
                       </p>
                       <Badge variant="outline" className={instStatusColors[inst.status]}>{inst.status}</Badge>
                       {inst.status === 'overdue' && (
@@ -305,18 +301,17 @@ export default function PortalPayments() {
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           onClick={() => setPayDialogInst(inst)}
                         >
-                          Pay Now
+                          {t.portal.payments.payNow}
                         </Button>
                       )}
                     </div>
                   </div>
 
-                  {/* Always visible slider */}
                   {isUpcoming && (
                     <div className={`mt-3 pt-3 border-t border-border/30 transition-opacity ${editMode ? 'opacity-100' : 'opacity-40'}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] text-muted-foreground">{formatCurrency(minPerInst)}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatCurrency(sliderMax)}</span>
+                        <span className="text-[10px] text-muted-foreground">{fmt(minPerInst)}</span>
+                        <span className="text-[10px] text-muted-foreground">{fmt(sliderMax)}</span>
                       </div>
                       <Slider
                         value={[displayAmt]}
@@ -341,7 +336,7 @@ export default function PortalPayments() {
           className="flex items-center gap-2 text-lg font-semibold mb-4 hover:text-accent transition-colors"
           onClick={() => setShowHistory(!showHistory)}
         >
-          Payment History
+          {t.portal.payments.paymentHistory}
           {showHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           <Badge variant="secondary" className="ml-1 text-xs">{paidInstalments.length}</Badge>
         </button>
@@ -356,13 +351,13 @@ export default function PortalPayments() {
                         <Check className="h-4 w-4 text-success" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{format(parseISO(inst.paidDate || inst.dueDate), 'dd MMMM yyyy')}</p>
-                        <p className="text-xs text-muted-foreground">Instalment #{inst.number}</p>
+                        <p className="font-medium text-sm">{format(parseISO(inst.paidDate || inst.dueDate), 'dd MMMM yyyy', { locale: dateFnsLocale })}</p>
+                        <p className="text-xs text-muted-foreground">{t.portal.payments.instalmentNumber(inst.number)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <p className="text-lg font-bold">{formatCurrency(inst.amount)}</p>
-                      <Badge variant="outline" className={instStatusColors.paid}>paid</Badge>
+                      <p className="text-lg font-bold">{fmt(inst.amount)}</p>
+                      <Badge variant="outline" className={instStatusColors.paid}>{t.common.paid}</Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -378,7 +373,7 @@ export default function PortalPayments() {
           onOpenChange={(open) => { if (!open) setPayDialogInst(null); }}
           amount={payDialogInst.amount}
           instalmentNumber={payDialogInst.number}
-          dueDate={format(parseISO(payDialogInst.dueDate), 'dd MMM yyyy')}
+          dueDate={format(parseISO(payDialogInst.dueDate), 'dd MMM yyyy', { locale: dateFnsLocale })}
         />
       )}
     </div>

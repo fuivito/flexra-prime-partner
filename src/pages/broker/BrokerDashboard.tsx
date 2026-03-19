@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mockAgreements, mockClients, mockActivity } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/calculator';
 import { Users, FileText, Send, CheckCircle2, DollarSign, Activity, AlertTriangle, PlusCircle, UserPlus, TrendingUp, Clock, Bell } from 'lucide-react';
 import { format, parseISO, subDays } from 'date-fns';
@@ -8,8 +7,9 @@ import SendReminderButton from '@/components/SendReminderButton';
 import { Link, useNavigate } from 'react-router-dom';
 import { AgreementStatus } from '@/types';
 import { Button } from '@/components/ui/button';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
+import { useLocale } from '@/i18n/LocaleContext';
+import { useLocalizedMockData } from '@/i18n/mock-data-localized';
 
 const statusColors: Record<AgreementStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
@@ -18,46 +18,47 @@ const statusColors: Record<AgreementStatus, string> = {
   overdue: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-// Chart data
-const activeAgreements = mockAgreements.filter(a => a.status === 'active').length;
-const pendingDeals = mockAgreements.filter(a => a.status === 'pending').length;
-const completedDeals = mockAgreements.filter(a => a.status === 'completed').length;
-const totalVolume = mockAgreements.reduce((sum, a) => sum + a.premiumAmount, 0);
-
-const statusPieData = [
-  { name: 'Active', value: activeAgreements, fill: 'hsl(174, 76%, 39%)' },
-  { name: 'Pending', value: pendingDeals, fill: 'hsl(38, 92%, 50%)' },
-  { name: 'Completed', value: completedDeals, fill: 'hsl(215, 12%, 35%)' },
-];
-
-const monthlyVolumeData = [
-  { month: 'Sep', value: 45000 },
-  { month: 'Oct', value: 200000 },
-  { month: 'Nov', value: 0 },
-  { month: 'Dec', value: 120000 },
-  { month: 'Jan', value: 85000 },
-  { month: 'Feb', value: 150000 },
-];
-
-// Cumulative broker commission earnings (mock ~3% of financed volume)
-const commissionData = [
-  { month: 'Sep', earnings: 1350 },
-  { month: 'Oct', earnings: 7350 },
-  { month: 'Nov', earnings: 7350 },
-  { month: 'Dec', earnings: 10950 },
-  { month: 'Jan', earnings: 13500 },
-  { month: 'Feb', earnings: 18000 },
-];
-const totalCommission = commissionData[commissionData.length - 1].earnings;
-
 export default function BrokerDashboard() {
   const navigate = useNavigate();
+  const { t, currencyLocale, currency, dateFnsLocale } = useLocale();
+  const { clients, agreements, activity } = useLocalizedMockData();
+  const fmt = (amount: number) => formatCurrency(amount, currencyLocale, currency);
 
-  const overdueInstalments = mockAgreements.flatMap(a =>
+  const activeAgreements = agreements.filter(a => a.status === 'active').length;
+  const pendingDeals = agreements.filter(a => a.status === 'pending').length;
+  const completedDeals = agreements.filter(a => a.status === 'completed').length;
+  const totalVolume = agreements.reduce((sum, a) => sum + a.premiumAmount, 0);
+
+  const statusPieData = [
+    { name: t.common.active, value: activeAgreements, fill: 'hsl(174, 76%, 39%)' },
+    { name: t.common.pending, value: pendingDeals, fill: 'hsl(38, 92%, 50%)' },
+    { name: t.common.completed, value: completedDeals, fill: 'hsl(215, 12%, 35%)' },
+  ];
+
+  const monthlyVolumeData = [
+    { month: t.months.short[8], value: 45000 },
+    { month: t.months.short[9], value: 200000 },
+    { month: t.months.short[10], value: 0 },
+    { month: t.months.short[11], value: 120000 },
+    { month: t.months.short[0], value: 85000 },
+    { month: t.months.short[1], value: 150000 },
+  ];
+
+  const commissionData = [
+    { month: t.months.short[8], earnings: 1350 },
+    { month: t.months.short[9], earnings: 7350 },
+    { month: t.months.short[10], earnings: 7350 },
+    { month: t.months.short[11], earnings: 10950 },
+    { month: t.months.short[0], earnings: 13500 },
+    { month: t.months.short[1], earnings: 18000 },
+  ];
+  const totalCommission = commissionData[commissionData.length - 1].earnings;
+
+  const overdueInstalments = agreements.flatMap(a =>
     a.instalments.filter(i => i.status === 'overdue').map(i => ({ ...i, clientName: a.clientName, agreementId: a.id }))
   );
 
-  const upcomingInstalments = mockAgreements
+  const upcomingInstalments = agreements
     .flatMap(a =>
       a.instalments
         .filter(i => i.status === 'upcoming')
@@ -67,37 +68,37 @@ export default function BrokerDashboard() {
     .slice(0, 6);
 
   const stats = [
-    { label: 'CLIENTS', value: mockClients.length.toString(), icon: Users, href: '/broker/clients' },
-    { label: 'PENDING', value: pendingDeals.toString(), icon: Send, href: '/broker/agreements?status=pending' },
-    { label: 'ACTIVE', value: activeAgreements.toString(), icon: CheckCircle2, href: '/broker/agreements?status=active' },
-    { label: 'COMPLETED', value: completedDeals.toString(), icon: FileText, href: '/broker/agreements?status=completed' },
-    { label: 'FINANCED', value: formatCurrency(totalVolume), icon: DollarSign, href: '/broker/agreements' },
+    { label: t.broker.dashboard.clients, value: clients.length.toString(), icon: Users, href: '/broker/clients' },
+    { label: t.broker.dashboard.pendingLabel, value: pendingDeals.toString(), icon: Send, href: '/broker/agreements?status=pending' },
+    { label: t.broker.dashboard.activeLabel, value: activeAgreements.toString(), icon: CheckCircle2, href: '/broker/agreements?status=active' },
+    { label: t.broker.dashboard.completedLabel, value: completedDeals.toString(), icon: FileText, href: '/broker/agreements?status=completed' },
+    { label: t.broker.dashboard.financedLabel, value: fmt(totalVolume), icon: DollarSign, href: '/broker/agreements' },
   ];
 
   return (
     <div className="space-y-8">
       {/* Page Header with CTAs */}
       <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back. Here's your overview.</p>
+        <h1 className="text-3xl font-bold text-foreground">{t.broker.dashboard.title}</h1>
+        <p className="text-muted-foreground">{t.broker.dashboard.subtitle}</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <Button
             variant="outline"
             className="gap-2 rounded-full px-6 h-11 border-border glass-card hover:bg-muted/60"
             onClick={() => navigate('/broker/clients')}
           >
-            <UserPlus className="h-4 w-4" /> Add New Client
+            <UserPlus className="h-4 w-4" /> {t.broker.dashboard.addNewClient}
           </Button>
           <Button
             className="gap-2 rounded-full px-6 h-11 bg-accent text-accent-foreground hover:bg-accent/90"
             onClick={() => navigate('/broker/deals/new')}
           >
-            <PlusCircle className="h-4 w-4" /> Create Agreement
+            <PlusCircle className="h-4 w-4" /> {t.broker.dashboard.createAgreement}
           </Button>
         </div>
       </div>
 
-      {/* Stat Cards — all clickable */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {stats.map((stat) => (
           <Link
@@ -114,10 +115,9 @@ export default function BrokerDashboard() {
 
       {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Monthly Volume - Area Chart */}
         <Card className="glass-card lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Financing Volume</CardTitle>
+            <CardTitle className="text-base">{t.broker.dashboard.financingVolume}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[220px] w-full">
@@ -131,7 +131,7 @@ export default function BrokerDashboard() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 18%, 86%)" strokeOpacity={0.5} />
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                  <YAxis tick={{ fontSize: 12, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency === 'EUR' ? '\u20AC' : '$'}${v / 1000}k`} />
                   <Tooltip
                     contentStyle={{
                       background: 'hsl(0, 0%, 100% / 0.9)',
@@ -140,7 +140,7 @@ export default function BrokerDashboard() {
                       borderRadius: '12px',
                       boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                     }}
-                    formatter={(value: number) => [formatCurrency(value), 'Volume']}
+                    formatter={(value: number) => [fmt(value), t.broker.dashboard.volume]}
                   />
                   <Area type="monotone" dataKey="value" stroke="hsl(174, 76%, 39%)" strokeWidth={2.5} fill="url(#volumeGradient)" />
                 </AreaChart>
@@ -149,25 +149,15 @@ export default function BrokerDashboard() {
           </CardContent>
         </Card>
 
-        {/* Agreement Status - Donut Chart */}
         <Card className="glass-card">
           <CardHeader>
-            <CardTitle className="text-base">Agreement Status</CardTitle>
+            <CardTitle className="text-base">{t.broker.dashboard.agreementStatus}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[220px] w-full flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
-                  <Pie
-                    data={statusPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={70}
-                    paddingAngle={4}
-                    dataKey="value"
-                    strokeWidth={0}
-                  >
+                  <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} dataKey="value" strokeWidth={0}>
                     {statusPieData.map((entry, index) => (
                       <Cell key={index} fill={entry.fill} />
                     ))}
@@ -198,13 +188,12 @@ export default function BrokerDashboard() {
 
       {/* Collections + Recent */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Broker Commission Earnings */}
         <Card className="glass-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-accent" /> Commission Earned
+              <TrendingUp className="h-4 w-4 text-accent" /> {t.broker.dashboard.commissionEarned}
             </CardTitle>
-            <p className="text-2xl font-bold text-foreground">{formatCurrency(totalCommission)}</p>
+            <p className="text-2xl font-bold text-foreground">{fmt(totalCommission)}</p>
           </CardHeader>
           <CardContent>
             <div className="h-[170px] w-full">
@@ -218,7 +207,7 @@ export default function BrokerDashboard() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 18%, 86%)" strokeOpacity={0.5} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                  <YAxis tick={{ fontSize: 11, fill: 'hsl(215, 12%, 35%)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency === 'EUR' ? '\u20AC' : '$'}${v / 1000}k`} />
                   <Tooltip
                     contentStyle={{
                       background: 'hsl(0, 0%, 100% / 0.9)',
@@ -227,7 +216,7 @@ export default function BrokerDashboard() {
                       borderRadius: '12px',
                       boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                     }}
-                    formatter={(value: number) => [formatCurrency(value), 'Cumulative Earnings']}
+                    formatter={(value: number) => [fmt(value), t.broker.dashboard.cumulativeEarnings]}
                   />
                   <Area type="monotone" dataKey="earnings" stroke="hsl(38, 92%, 50%)" strokeWidth={2.5} fill="url(#commissionGradient)" />
                 </AreaChart>
@@ -236,15 +225,14 @@ export default function BrokerDashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Agreements */}
         <Card className="glass-card lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Recent Agreements</CardTitle>
-            <Link to="/broker/agreements" className="text-sm text-accent hover:underline">View all →</Link>
+            <CardTitle className="text-base">{t.broker.dashboard.recentAgreements}</CardTitle>
+            <Link to="/broker/agreements" className="text-sm text-accent hover:underline">{t.broker.dashboard.viewAll}</Link>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {mockAgreements.slice(0, 5).map((a) => (
+              {agreements.slice(0, 5).map((a) => (
                 <Link
                   key={a.id}
                   to={`/broker/agreements/${a.id}`}
@@ -255,7 +243,7 @@ export default function BrokerDashboard() {
                     <p className="text-xs text-muted-foreground">{a.insurerName}</p>
                   </div>
                   <div className="text-right ml-4">
-                    <p className="text-sm font-semibold">{formatCurrency(a.premiumAmount)}</p>
+                    <p className="text-sm font-semibold">{fmt(a.premiumAmount)}</p>
                     <Badge variant="outline" className={`text-xs ${statusColors[a.status]}`}>
                       {a.status}
                     </Badge>
@@ -267,12 +255,12 @@ export default function BrokerDashboard() {
         </Card>
       </div>
 
-      {/* Overdue Alert — just above Activity */}
+      {/* Overdue Alert */}
       {overdueInstalments.length > 0 && (
         <Card className="glass-card border-destructive/30 bg-destructive/5">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-destructive text-base">
-              <AlertTriangle className="h-4 w-4" /> Missed Instalments
+              <AlertTriangle className="h-4 w-4" /> {t.broker.dashboard.missedInstalments}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -285,14 +273,14 @@ export default function BrokerDashboard() {
                   >
                     <div>
                       <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
-                      <p className="text-xs text-muted-foreground">Instalment #{inst.number} — Due {inst.dueDate}</p>
+                      <p className="text-xs text-muted-foreground">{t.broker.dashboard.instalmentDue(inst.number, inst.dueDate)}</p>
                     </div>
-                    <span className="text-sm font-semibold text-destructive">{formatCurrency(inst.amount)}</span>
+                    <span className="text-sm font-semibold text-destructive">{fmt(inst.amount)}</span>
                   </Link>
                   <SendReminderButton
                     clientName={inst.clientName}
                     instalmentNumber={inst.number}
-                    amount={formatCurrency(inst.amount)}
+                    amount={fmt(inst.amount)}
                     compact
                   />
                 </div>
@@ -307,9 +295,9 @@ export default function BrokerDashboard() {
         <Card className="glass-card">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-4 w-4 text-accent" /> Upcoming Instalments
+              <Clock className="h-4 w-4 text-accent" /> {t.broker.dashboard.upcomingInstalments}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Automatic reminders are sent 3 days before each due date.</p>
+            <p className="text-xs text-muted-foreground">{t.broker.dashboard.autoReminders}</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -328,19 +316,19 @@ export default function BrokerDashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
                       <p className="text-xs text-muted-foreground">
-                        Instalment #{inst.number} — Due {format(dueDate, 'dd MMM yyyy')}
+                        {t.broker.dashboard.instalmentDue(inst.number, format(dueDate, 'dd MMM yyyy', { locale: dateFnsLocale }))}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 ml-4">
                       <div className="text-right">
-                        <p className="text-sm font-semibold">{formatCurrency(inst.amount)}</p>
+                        <p className="text-sm font-semibold">{fmt(inst.amount)}</p>
                         <div className="flex items-center gap-1 justify-end">
                           <Bell className="h-3 w-3" />
                           <span className="text-[10px]">
                             {reminderSent ? (
-                              <span className="text-success">Reminder sent</span>
+                              <span className="text-success">{t.broker.dashboard.reminderSent}</span>
                             ) : (
-                              <span className="text-muted-foreground">{format(reminderDate, 'dd MMM')}</span>
+                              <span className="text-muted-foreground">{format(reminderDate, 'dd MMM', { locale: dateFnsLocale })}</span>
                             )}
                           </span>
                         </div>
@@ -357,16 +345,16 @@ export default function BrokerDashboard() {
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-4 w-4" /> Recent Activity
+            <Activity className="h-4 w-4" /> {t.broker.dashboard.recentActivity}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {mockActivity.map((item) => (
+            {activity.map((item) => (
               <div key={item.id} className="rounded-lg border border-border/40 p-3 glass-card">
                 <p className="text-sm text-foreground">{item.description}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {format(parseISO(item.timestamp), 'dd MMM, HH:mm', { locale: dateFnsLocale })}
                 </p>
               </div>
             ))}
