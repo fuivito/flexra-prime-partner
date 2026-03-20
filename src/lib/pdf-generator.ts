@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { Agreement } from '@/types';
-import { formatCurrency } from '@/lib/calculator';
+import { formatCurrency, APR, calculateMonthlyInstalment, calculateTotalInterest } from '@/lib/calculator';
 import { format, parseISO } from 'date-fns';
 import { en, Translations } from '@/i18n/translations';
 import { enUS, Locale as DateFnsLocale } from 'date-fns/locale';
@@ -105,12 +105,12 @@ export function generateAgreementPDF(agreement: Agreement, opts: PdfOptions = {}
   // === Financial Summary ===
   const downPayment = agreement.premiumAmount * (agreement.downPaymentPercent / 100);
   const financed = agreement.premiumAmount - downPayment;
-  const apr = 9.5;
-  const totalInterest = financed * (apr / 100) * (agreement.instalmentCount / 12);
+  const apr = APR;
+  const totalInterest = calculateTotalInterest(financed, agreement.instalmentCount);
   const totalCustomerPays = downPayment + financed + totalInterest;
   const monthlyPayment = agreement.instalments.length > 0
     ? agreement.instalments[0].amount
-    : financed / agreement.instalmentCount;
+    : calculateMonthlyInstalment(financed, agreement.instalmentCount);
 
   drawSection(t.pdf.financialSummary, [
     [t.pdf.totalPremium, fmt(agreement.premiumAmount)],

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { formatCurrency } from '@/lib/calculator';
+import { formatCurrency, APR, calculateMonthlyInstalment, calculateTotalInterest } from '@/lib/calculator';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Search, Plus, Users, Building2, ShieldCheck, FileText, Loader2, CheckCircle2, XCircle, Download, Send } from 'lucide-react';
 import { Client, Agreement } from '@/types';
@@ -68,13 +68,12 @@ export default function DealBuilder() {
   };
 
   // Financing terms
-  const apr = 9.5;
-  const flatRate = apr / 2;
+  const apr = APR;
   const downPayment = premium * (downPaymentPercent / 100);
   const financedAmount = premium - downPayment;
-  const totalInterest = financedAmount * (flatRate / 100);
+  const monthlyInstalment = instalmentCount > 0 ? calculateMonthlyInstalment(financedAmount, instalmentCount) : 0;
+  const totalInterest = instalmentCount > 0 ? calculateTotalInterest(financedAmount, instalmentCount) : 0;
   const totalRepayable = financedAmount + totalInterest;
-  const monthlyInstalment = instalmentCount > 0 ? totalRepayable / instalmentCount : 0;
   const brokerCommissionPercent = premium < 25000 ? 4.5 : premium <= 100000 ? 3.5 : 2.5;
   const brokerCommission = premium * (brokerCommissionPercent / 100);
 

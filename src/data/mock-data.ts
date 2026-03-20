@@ -1,5 +1,73 @@
-import { Client, Agreement, ActivityItem, User } from '@/types';
+import { Client, Agreement, ActivityItem, User, Instalment, InstalmentStatus } from '@/types';
+import { format, addMonths, subMonths, subDays, startOfMonth, isBefore, startOfDay } from 'date-fns';
 
+// ── Date helpers ────────────────────────────────────────────────────
+const today = startOfDay(new Date());
+const d = (date: Date) => format(date, 'yyyy-MM-dd');
+
+/** 1st of the month, N months before today */
+const monthStart = (monthsAgo: number) => startOfMonth(subMonths(today, monthsAgo));
+
+/** Specific day of the month, N months before today */
+function monthDay(monthsAgo: number, day: number): Date {
+  const m = subMonths(today, monthsAgo);
+  return new Date(m.getFullYear(), m.getMonth(), day);
+}
+
+/** Count how many monthly instalments (from firstDue) fall before today */
+function countPast(firstDue: Date, count: number): number {
+  let n = 0;
+  for (let i = 0; i < count; i++) {
+    if (isBefore(addMonths(firstDue, i), today)) n++;
+  }
+  return n;
+}
+
+/**
+ * Generate a monthly instalment schedule.
+ *   1…paidCount  → paid
+ *   past-due after paidCount → overdue
+ *   future → upcoming
+ */
+function makeInstalments(
+  agrNum: string,
+  agreementId: string,
+  count: number,
+  amount: number,
+  firstDue: Date,
+  paidCount: number,
+  lastAmount?: number,
+): Instalment[] {
+  return Array.from({ length: count }, (_, i) => {
+    const dueDate = addMonths(firstDue, i);
+    const isPast = isBefore(dueDate, today);
+    const num = i + 1;
+
+    let status: InstalmentStatus;
+    let paidDate: string | undefined;
+
+    if (num <= paidCount) {
+      status = 'paid';
+      paidDate = d(subDays(dueDate, (num % 2) + 1));
+    } else if (isPast) {
+      status = 'overdue';
+    } else {
+      status = 'upcoming';
+    }
+
+    return {
+      id: `i-${agrNum}-${i + 1}`,
+      agreementId,
+      number: num,
+      amount: i === count - 1 && lastAmount !== undefined ? lastAmount : amount,
+      dueDate: d(dueDate),
+      status,
+      ...(paidDate ? { paidDate } : {}),
+    };
+  });
+}
+
+// ── Users ───────────────────────────────────────────────────────────
 export const mockBrokerUser: User = {
   id: 'broker-1',
   name: 'Sarah Mitchell',
@@ -17,6 +85,7 @@ export const mockPolicyholderUser: User = {
   phone: '+1 (555) 234-5678',
 };
 
+// ── Clients ─────────────────────────────────────────────────────────
 export const mockClients: Client[] = [
   {
     id: 'client-1',
@@ -26,7 +95,7 @@ export const mockClients: Client[] = [
     phone: '+1 (555) 234-5678',
     businessType: 'Technology',
     companyRegNumber: '08745231',
-    createdAt: '2025-11-15',
+    createdAt: d(subDays(today, 300)),
   },
   {
     id: 'client-2',
@@ -36,7 +105,7 @@ export const mockClients: Client[] = [
     phone: '+1 (555) 345-6789',
     businessType: 'Construction',
     companyRegNumber: '11294076',
-    createdAt: '2025-12-01',
+    createdAt: d(subDays(today, 120)),
   },
   {
     id: 'client-3',
@@ -46,7 +115,7 @@ export const mockClients: Client[] = [
     phone: '+1 (555) 456-7890',
     businessType: 'Healthcare',
     companyRegNumber: '06381952',
-    createdAt: '2026-01-10',
+    createdAt: d(subDays(today, 210)),
   },
   {
     id: 'client-4',
@@ -55,10 +124,25 @@ export const mockClients: Client[] = [
     email: 'nina@atlaslogistics.com',
     phone: '+1 (555) 567-8901',
     businessType: 'Logistics',
-    createdAt: '2026-01-22',
+    createdAt: d(subDays(today, 56)),
   },
 ];
 
+// ── Instalments (computed once, shared with Italian locale) ─────────
+
+// agr-1: TechCorp — 12 monthly, only #1 paid → rest overdue / upcoming
+const agr1Due = monthStart(2);
+
+// agr-2: Green Valley — 6 monthly on the 15th, all past paid
+const agr2Due = monthDay(1, 15);
+
+// agr-3: Pinnacle — 12 monthly, all past paid
+const agr3Due = monthStart(5);
+
+// agr-4: TechCorp / Chubb — completed, all 6 paid
+const agr4Due = monthStart(8);
+
+// ── Agreements ──────────────────────────────────────────────────────
 export const mockAgreements: Agreement[] = [
   {
     id: 'agr-1',
@@ -66,75 +150,42 @@ export const mockAgreements: Agreement[] = [
     clientName: 'TechCorp Solutions',
     policyholderUserId: 'ph-1',
     premiumAmount: 120000,
-    policyPeriodStart: '2026-01-01',
-    policyPeriodEnd: '2027-01-01',
+    policyPeriodStart: d(agr1Due),
+    policyPeriodEnd: d(addMonths(agr1Due, 12)),
     insurerName: 'Allianz Commercial',
     downPaymentPercent: 20,
     instalmentCount: 12,
     status: 'active',
-    createdAt: '2025-12-20',
-    instalments: [
-      { id: 'i-1-1', agreementId: 'agr-1', number: 1, amount: 8000, dueDate: '2026-01-01', status: 'paid', paidDate: '2026-01-02' },
-      { id: 'i-1-2', agreementId: 'agr-1', number: 2, amount: 8000, dueDate: '2026-02-01', status: 'overdue' },
-      { id: 'i-1-3', agreementId: 'agr-1', number: 3, amount: 8000, dueDate: '2026-03-01', status: 'upcoming' },
-      { id: 'i-1-4', agreementId: 'agr-1', number: 4, amount: 8000, dueDate: '2026-05-01', status: 'upcoming' },
-      { id: 'i-1-5', agreementId: 'agr-1', number: 5, amount: 8000, dueDate: '2026-06-01', status: 'upcoming' },
-      { id: 'i-1-6', agreementId: 'agr-1', number: 6, amount: 8000, dueDate: '2026-07-01', status: 'upcoming' },
-      { id: 'i-1-7', agreementId: 'agr-1', number: 7, amount: 8000, dueDate: '2026-08-01', status: 'upcoming' },
-      { id: 'i-1-8', agreementId: 'agr-1', number: 8, amount: 8000, dueDate: '2026-09-01', status: 'upcoming' },
-      { id: 'i-1-9', agreementId: 'agr-1', number: 9, amount: 8000, dueDate: '2026-10-01', status: 'upcoming' },
-      { id: 'i-1-10', agreementId: 'agr-1', number: 10, amount: 8000, dueDate: '2026-11-01', status: 'upcoming' },
-      { id: 'i-1-11', agreementId: 'agr-1', number: 11, amount: 8000, dueDate: '2026-12-01', status: 'upcoming' },
-      { id: 'i-1-12', agreementId: 'agr-1', number: 12, amount: 8000, dueDate: '2027-01-01', status: 'upcoming' },
-    ],
+    createdAt: d(subDays(agr1Due, 12)),
+    instalments: makeInstalments('1', 'agr-1', 12, 8417.62, agr1Due, 2, 8417.59),
   },
   {
     id: 'agr-2',
     clientId: 'client-2',
     clientName: 'Green Valley Construction',
     premiumAmount: 85000,
-    policyPeriodStart: '2026-01-15',
-    policyPeriodEnd: '2027-01-15',
+    policyPeriodStart: d(subMonths(agr2Due, 1)),
+    policyPeriodEnd: d(addMonths(subMonths(agr2Due, 1), 12)),
     insurerName: 'AXA XL',
     downPaymentPercent: 25,
     instalmentCount: 6,
     status: 'active',
-    createdAt: '2026-01-10',
-    instalments: [
-      { id: 'i-2-1', agreementId: 'agr-2', number: 1, amount: 10625, dueDate: '2026-02-15', status: 'paid', paidDate: '2026-02-13' },
-      { id: 'i-2-2', agreementId: 'agr-2', number: 2, amount: 10625, dueDate: '2026-03-15', status: 'upcoming' },
-      { id: 'i-2-3', agreementId: 'agr-2', number: 3, amount: 10625, dueDate: '2026-04-15', status: 'upcoming' },
-      { id: 'i-2-4', agreementId: 'agr-2', number: 4, amount: 10625, dueDate: '2026-05-15', status: 'upcoming' },
-      { id: 'i-2-5', agreementId: 'agr-2', number: 5, amount: 10625, dueDate: '2026-06-15', status: 'upcoming' },
-      { id: 'i-2-6', agreementId: 'agr-2', number: 6, amount: 10625, dueDate: '2026-07-15', status: 'upcoming' },
-    ],
+    createdAt: d(subDays(subMonths(agr2Due, 1), 5)),
+    instalments: makeInstalments('2', 'agr-2', 6, 10921.34, agr2Due, countPast(agr2Due, 6), 10921.31),
   },
   {
     id: 'agr-3',
     clientId: 'client-3',
     clientName: 'Pinnacle Healthcare',
     premiumAmount: 200000,
-    policyPeriodStart: '2025-10-01',
-    policyPeriodEnd: '2026-10-01',
+    policyPeriodStart: d(subMonths(agr3Due, 1)),
+    policyPeriodEnd: d(addMonths(subMonths(agr3Due, 1), 12)),
     insurerName: 'Zurich Insurance',
     downPaymentPercent: 15,
     instalmentCount: 12,
     status: 'active',
-    createdAt: '2025-09-20',
-    instalments: [
-      { id: 'i-3-1', agreementId: 'agr-3', number: 1, amount: 14167, dueDate: '2025-11-01', status: 'paid', paidDate: '2025-10-30' },
-      { id: 'i-3-2', agreementId: 'agr-3', number: 2, amount: 14167, dueDate: '2025-12-01', status: 'paid', paidDate: '2025-11-29' },
-      { id: 'i-3-3', agreementId: 'agr-3', number: 3, amount: 14167, dueDate: '2026-01-01', status: 'paid', paidDate: '2025-12-30' },
-      { id: 'i-3-4', agreementId: 'agr-3', number: 4, amount: 14167, dueDate: '2026-02-01', status: 'paid', paidDate: '2026-01-30' },
-      { id: 'i-3-5', agreementId: 'agr-3', number: 5, amount: 14167, dueDate: '2026-03-01', status: 'upcoming' },
-      { id: 'i-3-6', agreementId: 'agr-3', number: 6, amount: 14167, dueDate: '2026-04-01', status: 'upcoming' },
-      { id: 'i-3-7', agreementId: 'agr-3', number: 7, amount: 14167, dueDate: '2026-05-01', status: 'upcoming' },
-      { id: 'i-3-8', agreementId: 'agr-3', number: 8, amount: 14167, dueDate: '2026-06-01', status: 'upcoming' },
-      { id: 'i-3-9', agreementId: 'agr-3', number: 9, amount: 14167, dueDate: '2026-07-01', status: 'upcoming' },
-      { id: 'i-3-10', agreementId: 'agr-3', number: 10, amount: 14167, dueDate: '2026-08-01', status: 'upcoming' },
-      { id: 'i-3-11', agreementId: 'agr-3', number: 11, amount: 14167, dueDate: '2026-09-01', status: 'upcoming' },
-      { id: 'i-3-12', agreementId: 'agr-3', number: 12, amount: 14163, dueDate: '2026-10-01', status: 'upcoming' },
-    ],
+    createdAt: d(subDays(subMonths(agr3Due, 1), 10)),
+    instalments: makeInstalments('3', 'agr-3', 12, 14906.20, agr3Due, countPast(agr3Due, 12), 14906.16),
   },
   {
     id: 'agr-4',
@@ -142,42 +193,36 @@ export const mockAgreements: Agreement[] = [
     clientName: 'TechCorp Solutions',
     policyholderUserId: 'ph-1',
     premiumAmount: 45000,
-    policyPeriodStart: '2025-07-01',
-    policyPeriodEnd: '2026-07-01',
+    policyPeriodStart: d(subMonths(agr4Due, 1)),
+    policyPeriodEnd: d(addMonths(subMonths(agr4Due, 1), 12)),
     insurerName: 'Chubb',
     downPaymentPercent: 20,
     instalmentCount: 6,
     status: 'completed',
-    createdAt: '2025-06-15',
-    instalments: [
-      { id: 'i-4-1', agreementId: 'agr-4', number: 1, amount: 6000, dueDate: '2025-08-01', status: 'paid', paidDate: '2025-07-30' },
-      { id: 'i-4-2', agreementId: 'agr-4', number: 2, amount: 6000, dueDate: '2025-09-01', status: 'paid', paidDate: '2025-08-30' },
-      { id: 'i-4-3', agreementId: 'agr-4', number: 3, amount: 6000, dueDate: '2025-10-01', status: 'paid', paidDate: '2025-09-29' },
-      { id: 'i-4-4', agreementId: 'agr-4', number: 4, amount: 6000, dueDate: '2025-11-01', status: 'paid', paidDate: '2025-10-30' },
-      { id: 'i-4-5', agreementId: 'agr-4', number: 5, amount: 6000, dueDate: '2025-12-01', status: 'paid', paidDate: '2025-11-29' },
-      { id: 'i-4-6', agreementId: 'agr-4', number: 6, amount: 6000, dueDate: '2026-01-01', status: 'paid', paidDate: '2025-12-30' },
-    ],
+    createdAt: d(subDays(subMonths(agr4Due, 1), 15)),
+    instalments: makeInstalments('4', 'agr-4', 6, 6167.34, agr4Due, 6, 6167.35),
   },
   {
     id: 'agr-5',
     clientId: 'client-4',
     clientName: 'Atlas Logistics',
     premiumAmount: 150000,
-    policyPeriodStart: '2026-02-01',
-    policyPeriodEnd: '2027-02-01',
-    insurerName: 'Lloyd\'s of London',
+    policyPeriodStart: d(monthStart(1)),
+    policyPeriodEnd: d(addMonths(monthStart(1), 12)),
+    insurerName: "Lloyd's of London",
     downPaymentPercent: 20,
     instalmentCount: 12,
     status: 'pending',
-    createdAt: '2026-01-28',
+    createdAt: d(subDays(monthStart(1), 4)),
     instalments: [],
   },
 ];
 
+// ── Activity ────────────────────────────────────────────────────────
 export const mockActivity: ActivityItem[] = [
-  { id: 'act-1', type: 'agreement_created', description: 'New agreement created for Atlas Logistics', timestamp: '2026-02-14T09:30:00' },
-  { id: 'act-2', type: 'payment_received', description: 'Payment received from Green Valley Construction — Instalment #1', timestamp: '2026-02-13T14:20:00' },
-  { id: 'act-3', type: 'payment_received', description: 'Payment received from TechCorp Solutions — Instalment #1', timestamp: '2026-01-30T11:15:00' },
-  { id: 'act-4', type: 'client_added', description: 'New client added: Atlas Logistics', timestamp: '2026-01-22T16:45:00' },
-  { id: 'act-5', type: 'agreement_completed', description: 'Agreement completed for TechCorp Solutions (Chubb policy)', timestamp: '2025-12-30T10:00:00' },
+  { id: 'act-1', type: 'agreement_created', description: 'New agreement created for Atlas Logistics', timestamp: `${d(subDays(today, 33))}T09:30:00` },
+  { id: 'act-2', type: 'payment_received', description: 'Payment received from Green Valley Construction — Instalment #1', timestamp: `${d(subDays(today, 34))}T14:20:00` },
+  { id: 'act-3', type: 'payment_received', description: 'Payment received from TechCorp Solutions — Instalment #1', timestamp: `${d(subDays(today, 48))}T11:15:00` },
+  { id: 'act-4', type: 'client_added', description: 'New client added: Atlas Logistics', timestamp: `${d(subDays(today, 56))}T16:45:00` },
+  { id: 'act-5', type: 'agreement_completed', description: 'Agreement completed for TechCorp Solutions (Chubb policy)', timestamp: `${d(subDays(today, 80))}T10:00:00` },
 ];

@@ -113,6 +113,93 @@ export default function BrokerDashboard() {
         ))}
       </div>
 
+      {/* Overdue Alert */}
+      {overdueInstalments.length > 0 && (
+        <Card className="glass-card border-destructive/30 bg-destructive/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-destructive text-base">
+              <AlertTriangle className="h-4 w-4" /> {t.broker.dashboard.missedInstalments}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {overdueInstalments.map((inst) => (
+                <div key={inst.id} className="flex items-center gap-2 rounded-lg p-3 hover:bg-destructive/10 transition-colors">
+                  <Link
+                    to={`/broker/agreements/${inst.agreementId}`}
+                    className="flex items-center justify-between flex-1 min-w-0"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
+                      <p className="text-xs text-muted-foreground">{t.broker.dashboard.instalmentDue(inst.number, inst.dueDate)}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-destructive">{fmt(inst.amount)}</span>
+                  </Link>
+                  <SendReminderButton
+                    clientName={inst.clientName}
+                    instalmentNumber={inst.number}
+                    amount={fmt(inst.amount)}
+                    compact
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Upcoming Instalments */}
+      {upcomingInstalments.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="h-4 w-4 text-accent" /> {t.broker.dashboard.upcomingInstalments}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">{t.broker.dashboard.autoReminders}</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {upcomingInstalments.map((inst) => {
+                const dueDate = parseISO(inst.dueDate);
+                const reminderDate = subDays(dueDate, 3);
+                const now = new Date();
+                const reminderSent = now >= reminderDate;
+
+                return (
+                  <Link
+                    key={inst.id}
+                    to={`/broker/agreements/${inst.agreementId}`}
+                    className="flex items-center justify-between rounded-lg p-3 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.broker.dashboard.instalmentDue(inst.number, format(dueDate, 'dd MMM yyyy', { locale: dateFnsLocale }))}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">{fmt(inst.amount)}</p>
+                        <div className="flex items-center gap-1 justify-end">
+                          <Bell className="h-3 w-3" />
+                          <span className="text-[10px]">
+                            {reminderSent ? (
+                              <span className="text-success">{t.broker.dashboard.reminderSent}</span>
+                            ) : (
+                              <span className="text-muted-foreground">{format(reminderDate, 'dd MMM', { locale: dateFnsLocale })}</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="glass-card lg:col-span-2">
@@ -254,93 +341,6 @@ export default function BrokerDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Overdue Alert */}
-      {overdueInstalments.length > 0 && (
-        <Card className="glass-card border-destructive/30 bg-destructive/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-destructive text-base">
-              <AlertTriangle className="h-4 w-4" /> {t.broker.dashboard.missedInstalments}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {overdueInstalments.map((inst) => (
-                <div key={inst.id} className="flex items-center gap-2 rounded-lg p-3 hover:bg-destructive/10 transition-colors">
-                  <Link
-                    to={`/broker/agreements/${inst.agreementId}`}
-                    className="flex items-center justify-between flex-1 min-w-0"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
-                      <p className="text-xs text-muted-foreground">{t.broker.dashboard.instalmentDue(inst.number, inst.dueDate)}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-destructive">{fmt(inst.amount)}</span>
-                  </Link>
-                  <SendReminderButton
-                    clientName={inst.clientName}
-                    instalmentNumber={inst.number}
-                    amount={fmt(inst.amount)}
-                    compact
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Upcoming Instalments */}
-      {upcomingInstalments.length > 0 && (
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-4 w-4 text-accent" /> {t.broker.dashboard.upcomingInstalments}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">{t.broker.dashboard.autoReminders}</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {upcomingInstalments.map((inst) => {
-                const dueDate = parseISO(inst.dueDate);
-                const reminderDate = subDays(dueDate, 3);
-                const now = new Date();
-                const reminderSent = now >= reminderDate;
-
-                return (
-                  <Link
-                    key={inst.id}
-                    to={`/broker/agreements/${inst.agreementId}`}
-                    className="flex items-center justify-between rounded-lg p-3 hover:bg-muted/40 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{inst.clientName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {t.broker.dashboard.instalmentDue(inst.number, format(dueDate, 'dd MMM yyyy', { locale: dateFnsLocale }))}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 ml-4">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold">{fmt(inst.amount)}</p>
-                        <div className="flex items-center gap-1 justify-end">
-                          <Bell className="h-3 w-3" />
-                          <span className="text-[10px]">
-                            {reminderSent ? (
-                              <span className="text-success">{t.broker.dashboard.reminderSent}</span>
-                            ) : (
-                              <span className="text-muted-foreground">{format(reminderDate, 'dd MMM', { locale: dateFnsLocale })}</span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Card className="glass-card">
         <CardHeader>
